@@ -11,6 +11,7 @@ import os
 import re # For regex to extract verification code
 import base64
 from datetime import datetime
+import threading
 
 # Optional: Gemini Vision for smart element finding
 try:
@@ -39,6 +40,12 @@ class JsonLogHandler(logging.Handler):
         super().__init__()
         self.port = int(os.environ.get("PORT", 8080))
 
+    def _post_log(self, entry):
+        try:
+            requests.post(f"http://127.0.0.1:{self.port}/api/logs", json=entry, timeout=2.0)
+        except Exception:
+            pass
+
     def emit(self, record):
         # Ignore requests, urllib3, and dashboard API call logs to avoid infinite loop
         if record.name.startswith("urllib3") or record.name.startswith("requests"):
@@ -51,8 +58,8 @@ class JsonLogHandler(logging.Handler):
                 "level": record.levelname,
                 "message": record.getMessage()
             }
-            # Send to dashboard POST API
-            requests.post(f"http://127.0.0.1:{self.port}/api/logs", json=entry, timeout=0.2)
+            # Send to dashboard POST API in a background thread to prevent blocks/timeouts
+            threading.Thread(target=self._post_log, args=(entry,), daemon=True).start()
         except Exception:
             pass
 
