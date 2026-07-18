@@ -1,6 +1,6 @@
 # TeraBox Referral Automator: Automated Referral Registration Bot with Live Dashboard
 
-[![Docker Image](https://img.shields.io/badge/Docker_Hub-mehaxsandhu%2Fterabox--referral--bot-blue?logo=docker&logoColor=white)](https://hub.docker.com/r/mehaxsandhu/terabox-referral-bot)
+[![Docker Image](https://img.shields.io/badge/Docker_Hub-mehakxsandhu%2Fterabox--referral--bot-blue?logo=docker&logoColor=white)](https://hub.docker.com/r/mehakxsandhu/terabox-referral-bot)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![Playwright](https://img.shields.io/badge/Playwright-Browser_Automation-green.svg)](https://playwright.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -44,7 +44,7 @@ A fully automated TeraBox referral registration bot with a **real-time web dashb
 - **3-attempt retry logic** — retries verification code on failure with automatic resend
 - **Multi-strategy button clicking** — text match → CSS selector → JavaScript DOM click fallbacks
 - **Post-click verification** — confirms each step actually worked before proceeding
-- **1-Click Docker & Docker Hub** — pre-built Docker image `mehaxsandhu/terabox-referral-bot` with GitHub Actions auto-build
+- **1-Click Docker & Docker Hub** — pre-built Docker image `mehakxsandhu/terabox-referral-bot` with GitHub Actions auto-build
 - **Render Cloud Ready** — includes `render.yaml` blueprint and RAM optimizations for free cloud hosting
 
 ---
@@ -69,12 +69,12 @@ The dashboard provides a clean, minimal interface for monitoring and controlling
 ### 1. Pre-built Docker Hub Image
 The image is automatically built and pushed on every GitHub commit to Docker Hub:
 ```bash
-docker pull mehaxsandhu/terabox-referral-bot:latest
+docker pull mehakxsandhu/terabox-referral-bot:latest
 ```
 
 ### 2. 1-Click Run Command
 ```bash
-docker run -d -p 8080:7860 --name terabox-bot mehaxsandhu/terabox-referral-bot:latest
+docker run -d -p 8080:7860 --name terabox-bot mehakxsandhu/terabox-referral-bot:latest
 ```
 
 ### 3. Docker Compose
@@ -95,7 +95,7 @@ Includes a `render.yaml` Blueprint specification for deploying to Render's free 
 
 ```bash
 # Option A: Run directly from Docker Hub
-docker run -d -p 8080:7860 --name terabox-bot mehaxsandhu/terabox-referral-bot:latest
+docker run -d -p 8080:7860 --name terabox-bot mehakxsandhu/terabox-referral-bot:latest
 
 # Option B: Run with Docker Compose
 git clone https://github.com/mehaksandhudev/terabox-referral-bot.git

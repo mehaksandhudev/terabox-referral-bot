@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   terabox-bot:
-    image: mehaxsandhu/terabox-referral-bot:latest
+    image: mehakxsandhu/terabox-referral-bot:latest
     build: .
     container_name: terabox-referral-bot
     ports:

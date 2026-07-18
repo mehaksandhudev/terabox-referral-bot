@@ -29,5 +29,5 @@ jobs:
           context: .
           push: true
           tags: |
-            mehaxsandhu/terabox-referral-bot:latest
-            mehaxsandhu/terabox-referral-bot:${{ github.sha }}
+            mehakxsandhu/terabox-referral-bot:latest
+            mehakxsandhu/terabox-referral-bot:${{ github.sha }}
