@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: terabox-referral-bot
+    env: docker
+    plan: free
+    region: oregon
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: EMAIL_PROVIDER
+        value: 1secmail
+      - key: DELAY_SECONDS
+        value: 15
+      - key: ROUND_DELAY
+        value: 30
