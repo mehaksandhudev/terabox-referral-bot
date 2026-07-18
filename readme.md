@@ -1,6 +1,6 @@
 # TeraBox Referral Automator: Automated Referral Registration Bot with Live Dashboard
 
-[![Docker Image](https://img.shields.io/badge/Docker_Hub-mehakxsandhu%2Fterabox--referral--bot-blue?logo=docker&logoColor=white)](https://hub.docker.com/r/mehakxsandhu/terabox-referral-bot)
+[![Docker Image](https://img.shields.io/badge/Docker_Hub-mehakxsandhu%2Fterabox--referral--bot-blue?logo=docker&logoColor=white)](https://hub.docker.com/repository/docker/mehakxsandhu/terabox-referral-bot/general)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![Playwright](https://img.shields.io/badge/Playwright-Browser_Automation-green.svg)](https://playwright.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -67,17 +67,21 @@ The dashboard provides a clean, minimal interface for monitoring and controlling
 ## 🐳 Docker & Cloud Integrations
 
 ### 1. Pre-built Docker Hub Image
-The image is automatically built and pushed on every GitHub commit to Docker Hub:
+The image is hosted on Docker Hub at **[mehakxsandhu/terabox-referral-bot](https://hub.docker.com/repository/docker/mehakxsandhu/terabox-referral-bot/general)** and is automatically built and updated on every GitHub commit.
+
+To pull the latest image:
 ```bash
 docker pull mehakxsandhu/terabox-referral-bot:latest
 ```
 
 ### 2. 1-Click Run Command
+Run the container locally using:
 ```bash
 docker run -d -p 8080:7860 --name terabox-bot mehakxsandhu/terabox-referral-bot:latest
 ```
 
 ### 3. Docker Compose
+Run in detached mode using compose:
 ```bash
 docker compose up -d
 ```
