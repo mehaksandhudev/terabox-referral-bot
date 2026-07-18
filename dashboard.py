@@ -306,6 +306,9 @@ def write_control(data):
     return current
 
 
+IN_MEMORY_LOGS = []
+
+
 class Handler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path in ('/', '/index.html'):
@@ -315,7 +318,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         elif self.path == '/api/links':
             self._json({"links": read_links()})
         elif self.path.startswith('/api/logs'):
-            self._file(LOGS_FILE, {"logs":[]})
+            self._json({"logs": IN_MEMORY_LOGS})
         elif self.path.startswith('/api/control'):
             self._json(read_control())
         else:
@@ -336,6 +339,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             d = self._body()
             updated = write_control(d)
             self._json({"success":True, **updated})
+        elif self.path == '/api/logs':
+            d = self._body()
+            if isinstance(d, dict) and 'message' in d:
+                IN_MEMORY_LOGS.append(d)
+                if len(IN_MEMORY_LOGS) > 200:
+                    IN_MEMORY_LOGS.pop(0)
+            self._json({"success":True})
         else: self.send_response(404); self.end_headers()
 
     def do_DELETE(self):

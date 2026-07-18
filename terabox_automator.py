@@ -29,41 +29,30 @@ LOGS_FILE = os.path.join(SCRIPT_DIR_LOG, "logs.json")
 
 
 class JsonLogHandler(logging.Handler):
-    """Appends log entries to logs.json for the dashboard."""
-    def __init__(self, filepath):
+    """Sends log entries to the dashboard API in memory to avoid disk file locks."""
+    def __init__(self):
         super().__init__()
-        self.filepath = filepath
-        # Reset logs on start
-        with open(self.filepath, 'w') as f:
-            json.dump({"logs": []}, f)
+        self.port = int(os.environ.get("PORT", 7860))
 
     def emit(self, record):
+        # Ignore requests logs to avoid infinite logging loops
+        if "POST /api/logs" in record.getMessage() or "GET /api/" in record.getMessage():
+            return
         try:
             entry = {
                 "time": datetime.now().strftime("%H:%M:%S"),
                 "level": record.levelname,
                 "message": record.getMessage()
             }
-            # Read, append, write
-            logs = {"logs": []}
-            if os.path.exists(self.filepath):
-                try:
-                    with open(self.filepath, 'r') as f:
-                        logs = json.load(f)
-                except Exception:
-                    logs = {"logs": []}
-            logs["logs"].append(entry)
-            # Keep last 200 entries
-            logs["logs"] = logs["logs"][-200:]
-            with open(self.filepath, 'w') as f:
-                json.dump(logs, f)
+            # Send to dashboard POST API
+            requests.post(f"http://localhost:{self.port}/api/logs", json=entry, timeout=0.2)
         except Exception:
             pass
 
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 # Add JSON handler for dashboard
-logging.getLogger().addHandler(JsonLogHandler(LOGS_FILE))
+logging.getLogger().addHandler(JsonLogHandler())
 
 
 
