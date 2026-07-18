@@ -260,28 +260,4 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 <p align="center">
   Built with ❤️ by <a href="https://github.com/mehaksandhudev">mehaksandhudev</a>
-</p>mer
-
-> **This project is for EDUCATIONAL and RESEARCH purposes only.**
->
-> This tool was built to learn about:
-> - Browser automation with Playwright
-> - Temporary email API integration
-> - Real-time web dashboard development
-> - Multi-strategy element detection in dynamic web apps
->
-> **Do NOT use this tool to violate any website's Terms of Service.**
-> The authors are not responsible for any misuse of this software.
-> Use at your own risk and always respect the terms and conditions of any service you interact with.
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
-
----
-
-<p align="center">
-  Built with ❤️ by <a href="https://github.com/mehaksandhudev">mehaksandhudev</a>
 </p>
