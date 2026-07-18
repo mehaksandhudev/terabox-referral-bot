@@ -1,11 +1,12 @@
 # TeraBox Referral Automator: Automated Referral Registration Bot with Live Dashboard
 
+[![Docker Image](https://img.shields.io/badge/Docker_Hub-mehaxsandhu%2Fterabox--referral--bot-blue?logo=docker&logoColor=white)](https://hub.docker.com/r/mehaxsandhu/terabox-referral-bot)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![Playwright](https://img.shields.io/badge/Playwright-Browser_Automation-green.svg)](https://playwright.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Educational](https://img.shields.io/badge/Purpose-Educational_Only-red.svg)](#%EF%B8%8F-disclaimer)
 
-A fully automated TeraBox referral registration bot with a **real-time web dashboard**, **live log streaming**, and **multi-link support**. Built with Playwright for browser automation and a custom Python dashboard server. No cloud services, no paid APIs, 100% local.
+A fully automated TeraBox referral registration bot with a **real-time web dashboard**, **live log streaming**, **Docker Hub integration**, and **multi-link support**. Built with Playwright for browser automation and a custom Python dashboard server. Runs locally or in the cloud (Render, Docker, VPS).
 
 > **⚠️ DISCLAIMER: This project is for educational and research purposes only. See [Disclaimer](#%EF%B8%8F-disclaimer).**
 
@@ -14,6 +15,7 @@ A fully automated TeraBox referral registration bot with a **real-time web dashb
 ## 📑 Table of Contents
 - [✨ Features](#-features)
 - [🖥️ Dashboard Preview](#️-dashboard-preview)
+- [🐳 Docker & Cloud Integrations](#-docker--cloud-integrations)
 - [🚀 Quick Start](#-quick-start)
 - [📁 Project Structure](#-project-structure)
 - [⚙️ Configuration](#️-configuration)
@@ -21,6 +23,7 @@ A fully automated TeraBox referral registration bot with a **real-time web dashb
 - [🔄 How It Works](#-how-it-works)
 - [🧪 Troubleshooting](#-troubleshooting)
 - [🤝 Contributing](#-contributing)
+- [☕ Support](#-support)
 - [⚠️ Disclaimer](#️-disclaimer)
 - [📄 License](#-license)
 
@@ -30,19 +33,19 @@ A fully automated TeraBox referral registration bot with a **real-time web dashb
 
 - **Fully automated registration** — navigates TeraBox, fills forms, handles email verification
 - **Multi-link support** — process multiple referral URLs in sequence, one account per link
-- **Continuous loop mode** — runs forever with configurable delays
-- **Live controls & configuration** — Resume, Pause, and Stop (Kill Switch) automation directly from the web dashboard
-- **Real-time web dashboard** — clean, minimal dark UI at `localhost:8080` with live stats and logs
-- **Dynamic delay adjustment** — configure the delay between links and rounds directly from the dashboard UI in real-time
-- **Live log streaming** — all automation logs streamed to dashboard in real-time
-- **Dashboard link management** — add/remove referral URLs from the web UI, no code touching
-- **Smart email provider fallback** — tries 1secmail first, falls back to Mail.tm automatically
+- **Continuous loop mode** — runs forever with configurable delays between links and rounds
+- **Live controls & kill switch** — Resume, Pause, and Stop automation instantly from the dashboard
+- **Real-time web dashboard** — clean, minimal dark UI with dynamic progress cards and live stats
+- **Dynamic delay adjustment** — update link and round delays on the fly without restarting
+- **Live log streaming** — real-time automation console logs streamed directly to the web dashboard
+- **Dashboard link management** — add/remove referral URLs directly from the UI
+- **Smart email provider fallback** — tries 1secmail first with automatic rate-limit delay, falls back to Mail.tm
 - **Robust verification code extraction** — extracts 4-digit code from email subject line
 - **3-attempt retry logic** — retries verification code on failure with automatic resend
 - **Multi-strategy button clicking** — text match → CSS selector → JavaScript DOM click fallbacks
 - **Post-click verification** — confirms each step actually worked before proceeding
-- **Stats tracking** — success/error/total counts saved to `stats.json` in real-time
-- **Optional LLM vision fallback** — uses Gemini API to find UI elements if selectors fail
+- **1-Click Docker & Docker Hub** — pre-built Docker image `mehaxsandhu/terabox-referral-bot` with GitHub Actions auto-build
+- **Render Cloud Ready** — includes `render.yaml` blueprint and RAM optimizations for free cloud hosting
 
 ---
 
@@ -52,63 +55,80 @@ The dashboard provides a clean, minimal interface for monitoring and controlling
 
 | Section | Description |
 |---|---|
-| **Control Bar** | Resume, Pause, and Stop (Kill Switch) buttons, and input fields to configure link & round delays on the fly |
-| **Stats Cards** | Total processed, successful, errors, and success rate |
-| **Progress Bar** | Visual progress of current round |
-| **Referral Links** | Add/remove URLs directly from the UI |
-| **Results Table** | Per-link status with email used, timestamp |
-| **Live Logs** | Real-time log stream from the automation engine |
+| **Control Bar** | Resume, Pause, and Stop (Kill Switch) buttons, plus live delay inputs |
+| **Stats Cards** | Total processed, successful, errors, and real-time success rate |
+| **Progress Bar** | Visual progress indicator of current processing round |
+| **Referral Links** | Interactive panel to add/remove target referral links |
+| **Results Table** | Per-link execution status with timestamp and generated email |
+| **Live Logs** | Real-time console terminal streaming automation engine events |
+
+---
+
+## 🐳 Docker & Cloud Integrations
+
+### 1. Pre-built Docker Hub Image
+The image is automatically built and pushed on every GitHub commit to Docker Hub:
+```bash
+docker pull mehaxsandhu/terabox-referral-bot:latest
+```
+
+### 2. 1-Click Run Command
+```bash
+docker run -d -p 8080:7860 --name terabox-bot mehaxsandhu/terabox-referral-bot:latest
+```
+
+### 3. Docker Compose
+```bash
+docker compose up -d
+```
+
+### 4. Render Cloud Hosting
+Includes a `render.yaml` Blueprint specification for deploying to Render's free tier with automated port configuration and memory limits.
 
 ---
 
 ## 🚀 Quick Start
 
-**Prerequisites:** Python 3.10+, Git
+**Prerequisites:** Docker OR Python 3.10+ & Git
+
+### 🐳 Docker Setup (Fastest)
 
 ```bash
-# 1. Clone the repository
+# Option A: Run directly from Docker Hub
+docker run -d -p 8080:7860 --name terabox-bot mehaxsandhu/terabox-referral-bot:latest
+
+# Option B: Run with Docker Compose
 git clone https://github.com/mehaksandhudev/terabox-referral-bot.git
 cd terabox-referral-bot
-
-# 2. Follow the setup guide
-# See SETUP.md for detailed step-by-step instructions
+docker compose up -d
 ```
-
-### 🐳 1-Click Docker Setup (Recommended)
-
-Run the entire application (Dashboard + Automation Engine) with a single command using Docker:
-
-```bash
-docker compose up -d --build
-```
-Or using plain Docker:
-```bash
-docker build -t terabox-bot .
-docker run -d -p 8080:7860 --name terabox-bot terabox-bot
-```
-**Open http://localhost:8080** to see your live dashboard!
+**Open http://localhost:8080** to view your dashboard.
 
 ---
 
-### 💻 Manual Setup
+### 💻 Manual Python Setup
 
 ```bash
-# Create virtual environment
+# 1. Clone repository
+git clone https://github.com/mehaksandhudev/terabox-referral-bot.git
+cd terabox-referral-bot
+
+# 2. Create virtual environment
 python -m venv venv
 .\venv\Scripts\activate        # Windows
 # source venv/bin/activate     # macOS/Linux
 
-# Install dependencies
+# 3. Install dependencies
 pip install -r requirements.txt
 playwright install chromium
 
-# Add your referral link
+# 4. Add your referral link
 echo https://your-terabox-referral-link > referral_links.txt
 
-# Start dashboard (Terminal 1)
+# 5. Start dashboard (Terminal 1)
 python dashboard.py
 
-# Start automation (Terminal 2)
+# 6. Start automation engine (Terminal 2)
 python terabox_automator.py
 ```
 
@@ -120,13 +140,21 @@ python terabox_automator.py
 
 ```
 terabox-referral-bot/
+├── .github/workflows/
+│   └── docker-image.yml   # GitHub Actions: Auto-build & push to Docker Hub
 ├── terabox_automator.py   # Main automation engine (Playwright + email handling)
 ├── dashboard.py           # Web dashboard server (stats + logs + link management)
 ├── referral_links.txt     # Referral URLs (one per line, editable via dashboard)
+├── Dockerfile             # Docker container configuration
+├── docker-compose.yml     # Docker Compose orchestration file
+├── render.yaml            # Render Cloud Blueprint setup
+├── requirements.txt       # Python dependencies (pinned for stability)
+├── start.sh               # Container entrypoint script
 ├── stats.json             # Auto-generated: real-time stats for dashboard
+├── control.json           # Auto-generated: dashboard control states
 ├── logs.json              # Auto-generated: log entries for dashboard
 ├── SETUP.md               # Detailed setup instructions
-├── README.md              # This file
+├── README.md              # Documentation
 ├── .gitignore             # Git ignore rules
 └── LICENSE                # MIT License
 ```
@@ -135,36 +163,30 @@ terabox-referral-bot/
 
 ## ⚙️ Configuration
 
-All configuration is done via **environment variables** (optional):
+Environment variables can be set locally, in Docker, or on Render:
 
 | Variable | Default | Description |
 |---|---|---|
-| `EMAIL_PROVIDER` | `1secmail` | Email provider: `1secmail` or `mailtm` |
+| `PORT` | `7860` / `8080` | Port for the Web Dashboard server |
+| `EMAIL_PROVIDER` | `1secmail` | Primary email provider (`1secmail` or `mailtm`) |
 | `DELAY_SECONDS` | `15` | Delay between processing each link (seconds) |
 | `ROUND_DELAY` | `30` | Delay between rounds in continuous mode (seconds) |
-| `GEMINI_API_KEY` | *(none)* | Optional: Google Gemini API key for LLM vision fallback |
-
-**Example:**
-```bash
-set DELAY_SECONDS=10
-set ROUND_DELAY=60
-python terabox_automator.py
-```
 
 ---
 
 ## 🔌 Dashboard API
 
-The dashboard exposes REST endpoints for programmatic access:
+The dashboard server provides REST API endpoints for external integrations:
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/` | Dashboard web UI |
-| `GET` | `/api/stats` | Current automation stats (JSON) |
-| `GET` | `/api/links` | List all referral links |
-| `POST` | `/api/links` | Add a referral link `{"url": "..."}` |
-| `DELETE` | `/api/links` | Remove a link `{"index": 0}` or `{"clear_all": true}` |
-| `GET` | `/api/logs` | Live log entries (JSON) |
+| `GET` | `/` | Main dashboard web interface |
+| `GET` | `/api/stats` | Retrieve current automation statistics (JSON) |
+| `POST` | `/api/control` | Send Resume/Pause/Stop commands & update delays |
+| `GET` | `/api/links` | List all configured referral links |
+| `POST` | `/api/links` | Add a new referral link `{"url": "..."}` |
+| `DELETE` | `/api/links` | Remove a link `{"index": 0}` or clear all |
+| `GET` | `/api/logs` | Retrieve live log stream entries |
 
 ---
 
@@ -177,26 +199,13 @@ The dashboard exposes REST endpoints for programmatic access:
 │                 │     └──────────────────┘     │                 │
 │  - Add/Remove   │                              │  For each link:  │
 │    links        │     ┌──────────────────┐     │  1. Create email │
-│  - View stats   │◀────│  stats.json       │◀────│  2. Open browser │
-│  - Live logs    │     └──────────────────┘     │  3. Navigate URL │
-│                 │     ┌──────────────────┐     │  4. Sign up      │
-│                 │◀────│  logs.json        │◀────│  5. Verify code  │
-│                 │     └──────────────────┘     │  6. Complete reg │
-└─────────────────┘                              └─────────────────┘
-                                                        │
-                                                        ▼
-                                                  Wait 30s, repeat
+│  - Pause/Resume │◀────│  stats & control │◀────│  2. Open browser │
+│  - Live logs    │     │  .json           │     │  3. Navigate URL │
+└─────────────────┘     └──────────────────┘     │  4. Sign up      │
+                                                 │  5. Verify code  │
+                                                 │  6. Complete reg │
+                                                 └─────────────────┘
 ```
-
-**Registration flow per link:**
-1. Create a temporary email account (1secmail → Mail.tm fallback)
-2. Launch headless Chromium via Playwright
-3. Navigate to referral URL → Click Login → Sign up → Email option
-4. Fill email → Click Continue (3-strategy fallback)
-5. Retrieve verification code from email subject line
-6. Fill code with retry logic (3 attempts, auto-resend)
-7. Set password → Submit → Account created
-8. Save result to `stats.json` → Next link
 
 ---
 
@@ -204,12 +213,10 @@ The dashboard exposes REST endpoints for programmatic access:
 
 | Issue | Solution |
 |---|---|
-| `ModuleNotFoundError: nest_asyncio` | Activate venv: `.\venv\Scripts\activate` |
-| `1secmail 403 Forbidden` | Normal — falls back to Mail.tm automatically |
-| Continue button not clicking | Fixed with 3-strategy fallback (text, CSS, JS) |
-| Wrong verification code | Extracts from subject line, retries 3 times |
-| Dashboard not updating | Check both scripts are running in separate terminals |
-| `playwright install` fails | Run as admin: `playwright install chromium` |
+| `Playwright binary mismatch` | Use pre-built Docker image or run `playwright install chromium` |
+| `Mail.tm 429 Too Many Requests` | Handled automatically with rate-limit backoff delay |
+| `Render Web Service crash` | Ensure memory flags `--no-sandbox --disable-dev-shm-usage` are enabled |
+| `Dashboard not updating` | Verify both `dashboard.py` and `terabox_automator.py` are active |
 
 ---
 
@@ -232,6 +239,24 @@ If this project helped you, consider buying me a coffee!
 ---
 
 ## ⚠️ Disclaimer
+
+> **This project is for EDUCATIONAL and RESEARCH purposes only.**
+>
+> This tool was built to learn about browser automation, temporary email API integrations, Docker containerization, and web dashboards.
+>
+> **Do NOT use this tool to violate any website's Terms of Service.** The authors take no responsibility for misuse of this software.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+---
+
+<p align="center">
+  Built with ❤️ by <a href="https://github.com/mehaksandhudev">mehaksandhudev</a>
+</p>mer
 
 > **This project is for EDUCATIONAL and RESEARCH purposes only.**
 >
