@@ -354,7 +354,8 @@ async def orchestrate_full_registration(terabox_referral_url):
             if created_account:
                 email_provider = '1secmail'
             else:
-                logging.warning("1secmail failed. Trying Mail.tm as fallback...")
+                logging.warning("1secmail failed. Waiting 3s before trying Mail.tm as fallback...")
+                time.sleep(3)
                 created_account = mailtm_handler.create_account()
                 if created_account:
                     email_provider = 'mailtm'
@@ -364,7 +365,8 @@ async def orchestrate_full_registration(terabox_referral_url):
             if created_account:
                 email_provider = 'mailtm'
             else:
-                logging.warning("Mail.tm failed. Trying 1secmail as fallback...")
+                logging.warning("Mail.tm failed. Waiting 3s before trying 1secmail as fallback...")
+                time.sleep(3)
                 created_account = onesecmail_handler.create_account()
                 if created_account:
                     email_provider = '1secmail'
