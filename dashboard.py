@@ -8,7 +8,7 @@ import socketserver
 import json
 import os
 
-PORT = 8080
+PORT = int(os.environ.get("PORT", 7860))
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 STATS_FILE = os.path.join(SCRIPT_DIR, "stats.json")
 LINKS_FILE = os.path.join(SCRIPT_DIR, "referral_links.txt")
