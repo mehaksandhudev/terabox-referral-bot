@@ -52,7 +52,7 @@ class JsonLogHandler(logging.Handler):
                 "message": record.getMessage()
             }
             # Send to dashboard POST API
-            requests.post(f"http://localhost:{self.port}/api/logs", json=entry, timeout=0.2)
+            requests.post(f"http://127.0.0.1:{self.port}/api/logs", json=entry, timeout=0.2)
         except Exception:
             pass
 
