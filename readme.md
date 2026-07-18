@@ -207,6 +207,14 @@ The dashboard exposes REST endpoints for programmatic access:
 
 ---
 
+## ☕ Support
+
+If this project helped you, consider buying me a coffee!
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-ffdd00?style=flat-square&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/mehaksandhudev)
+
+---
+
 ## ⚠️ Disclaimer
 
 > **This project is for EDUCATIONAL and RESEARCH purposes only.**
