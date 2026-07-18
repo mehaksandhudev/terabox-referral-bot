@@ -28,14 +28,21 @@ SCRIPT_DIR_LOG = os.path.dirname(os.path.abspath(__file__))
 LOGS_FILE = os.path.join(SCRIPT_DIR_LOG, "logs.json")
 
 
+# Disable verbose logs from requests / urllib3 to prevent infinite loops
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("requests").setLevel(logging.WARNING)
+
+
 class JsonLogHandler(logging.Handler):
     """Sends log entries to the dashboard API in memory to avoid disk file locks."""
     def __init__(self):
         super().__init__()
-        self.port = int(os.environ.get("PORT", 7860))
+        self.port = int(os.environ.get("PORT", 8080))
 
     def emit(self, record):
-        # Ignore requests logs to avoid infinite logging loops
+        # Ignore requests, urllib3, and dashboard API call logs to avoid infinite loop
+        if record.name.startswith("urllib3") or record.name.startswith("requests"):
+            return
         if "POST /api/logs" in record.getMessage() or "GET /api/" in record.getMessage():
             return
         try:
