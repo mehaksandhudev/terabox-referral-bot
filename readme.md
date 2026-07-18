@@ -74,7 +74,23 @@ cd terabox-referral-bot
 # See SETUP.md for detailed step-by-step instructions
 ```
 
-**Or quick setup:**
+### 🐳 1-Click Docker Setup (Recommended)
+
+Run the entire application (Dashboard + Automation Engine) with a single command using Docker:
+
+```bash
+docker compose up -d --build
+```
+Or using plain Docker:
+```bash
+docker build -t terabox-bot .
+docker run -d -p 8080:7860 --name terabox-bot terabox-bot
+```
+**Open http://localhost:8080** to see your live dashboard!
+
+---
+
+### 💻 Manual Setup
 
 ```bash
 # Create virtual environment
@@ -83,7 +99,7 @@ python -m venv venv
 # source venv/bin/activate     # macOS/Linux
 
 # Install dependencies
-pip install playwright requests nest_asyncio
+pip install -r requirements.txt
 playwright install chromium
 
 # Add your referral link

@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  terabox-bot:
+    build: .
+    container_name: terabox-referral-bot
+    ports:
+      - "8080:7860"
+    environment:
+      - PORT=7860
+      - EMAIL_PROVIDER=1secmail
+      - DELAY_SECONDS=15
+      - ROUND_DELAY=30
+    volumes:
+      - ./referral_links.txt:/app/referral_links.txt
+      - ./stats.json:/app/stats.json
+      - ./control.json:/app/control.json
+    restart: always
