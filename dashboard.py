@@ -248,7 +248,7 @@ async function refStats(){
     if(cd.stopped){dot.className='dot stopped';lbl.textContent='Stopped'}
     else if(cd.paused){dot.className='dot paused';lbl.textContent='Paused'}
     else if(run){dot.className='dot run';lbl.textContent='Running'}
-    else if(tot){dot.className='dot done';lbl.textContent='Done'}
+    else if(tot){dot.className='dot done';lbl.textContent='Sleeping (Next round soon)'}
     else{dot.className='dot idle';lbl.textContent='Idle'}
     const tb=document.getElementById('rB');
     if(!res.length){tb.innerHTML='<tr><td colspan="5" class="empty">No results yet</td></tr>';return}
