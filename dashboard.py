@@ -245,10 +245,15 @@ async function refStats(){
     // Status dot — check control state too
     const cr=await fetch('/api/control');const cd=await cr.json();
     const dot=document.getElementById('dot'),lbl=document.getElementById('stLbl');
+    window.nextRoundAt = d.next_round_at || 0;
     if(cd.stopped){dot.className='dot stopped';lbl.textContent='Stopped'}
     else if(cd.paused){dot.className='dot paused';lbl.textContent='Paused'}
     else if(run){dot.className='dot run';lbl.textContent='Running'}
-    else if(tot){dot.className='dot done';lbl.textContent='Sleeping (Next round soon)'}
+    else if(tot){
+      const remaining = Math.max(0, Math.round(window.nextRoundAt - Date.now()/1000));
+      dot.className='dot done';
+      lbl.textContent = remaining > 0 ? `Sleeping (Next round in ${remaining}s)` : 'Sleeping (Next round soon)';
+    }
     else{dot.className='dot idle';lbl.textContent='Idle'}
     const tb=document.getElementById('rB');
     if(!res.length){tb.innerHTML='<tr><td colspan="5" class="empty">No results yet</td></tr>';return}
@@ -275,8 +280,18 @@ async function refLogs(){
   }catch{}
 }
 
+function tickCountdown(){
+  const dot=document.getElementById('dot'),lbl=document.getElementById('stLbl');
+  if(dot.classList.contains('done') && window.nextRoundAt > 0){
+    const remaining = Math.max(0, Math.round(window.nextRoundAt - Date.now()/1000));
+    lbl.textContent = remaining > 0 ? `Sleeping (Next round in ${remaining}s)` : 'Sleeping (Next round soon)';
+  }
+}
+
 async function ref(){const ls=await getL();drawL(ls);await refStats();await refLogs()}
-ref();setInterval(ref,3000);
+ref();
+setInterval(ref,3000);
+setInterval(tickCountdown,1000);
 </script>
 </body>
 </html>

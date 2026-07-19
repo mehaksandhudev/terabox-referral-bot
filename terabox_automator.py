@@ -950,6 +950,7 @@ if __name__ == '__main__':
             logging.info(f"Next round in {round_delay}s... (Ctrl+C to stop)")
 
             stats["running"] = False
+            stats["next_round_at"] = time.time() + round_delay
             save_stats(stats)
 
             # Wait in small intervals so we can respond to pause/stop during round delay
