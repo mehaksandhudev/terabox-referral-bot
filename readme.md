@@ -46,6 +46,7 @@ A fully automated TeraBox referral registration bot with a **real-time web dashb
 - **Post-click verification** — confirms each step actually worked before proceeding
 - **1-Click Docker & Docker Hub** — pre-built Docker image `mehakxsandhu/terabox-referral-bot` with GitHub Actions auto-build
 - **Render Cloud Ready** — includes `render.yaml` blueprint and RAM optimizations for free cloud hosting
+- **Telegram Bot Integration** — query statistics, pause/resume/stop automation, and add referral links remotely via Telegram chat
 
 ---
 

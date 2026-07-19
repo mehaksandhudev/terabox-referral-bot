@@ -7,6 +7,9 @@ import http.server
 import socketserver
 import json
 import os
+import threading
+import requests
+import time
 
 PORT = int(os.environ.get("PORT", 8080))
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -15,7 +18,7 @@ LINKS_FILE = os.path.join(SCRIPT_DIR, "referral_links.txt")
 LOGS_FILE = os.path.join(SCRIPT_DIR, "logs.json")
 CONTROL_FILE = os.path.join(SCRIPT_DIR, "control.json")
 
-DEFAULT_CONTROL = {"paused": False, "stopped": False, "round_delay": 30, "link_delay": 15}
+DEFAULT_CONTROL = {"paused": False, "stopped": False, "round_delay": 30, "link_delay": 15, "telegram_token": "", "telegram_chat_id": ""}
 
 DASHBOARD_HTML = r"""<!DOCTYPE html>
 <html lang="en">
@@ -109,6 +112,12 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .toast{position:fixed;bottom:24px;right:24px;padding:10px 16px;border-radius:6px;font-size:13px;font-weight:500;z-index:100;transform:translateY(80px);opacity:0;transition:all .25s;background:var(--surface2);color:var(--text);border:1px solid var(--border)}
 .toast.show{transform:translateY(0);opacity:1}
+.tg-group{display:flex;flex-direction:column;gap:12px;padding:14px 18px}
+.tg-field{display:flex;flex-direction:column;gap:6px}
+.tg-field label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2)}
+.tg-input{width:100%;padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;outline:none;transition:border-color .2s}
+.tg-input:focus{border-color:var(--accent)}
+.tg-input::placeholder{color:var(--muted)}
 @media(max-width:900px){.cols{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.app{padding:16px}.ctrl{flex-direction:column;align-items:flex-start}.ctrl-sep{display:none}}
 </style>
 </head>
@@ -175,6 +184,23 @@ tr:hover td{background:rgba(255,255,255,.02)}
     </div>
     <div>
       <div class="p">
+        <div class="p-h"><h2>Telegram Integration</h2></div>
+        <div class="tg-group">
+          <div class="tg-field">
+            <label>Bot Token</label>
+            <input type="text" class="tg-input" id="tgToken" placeholder="Paste bot token (e.g. 123456:ABC...)" />
+          </div>
+          <div class="tg-field">
+            <label>Allowed Chat ID (Optional)</label>
+            <input type="text" class="tg-input" id="tgChatId" placeholder="e.g. 123456789" />
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-p" onclick="saveTelegram()" style="flex:1;">Save Settings</button>
+            <button class="btn btn-g" onclick="testTelegram()" style="flex:1;">Test Connection</button>
+          </div>
+        </div>
+      </div>
+      <div class="p">
         <div class="p-h"><h2>Live Logs</h2><span class="bg" id="lgC">0 entries</span></div>
         <div class="p-b" style="padding:8px 14px">
           <div class="log-v" id="lgV">
@@ -209,7 +235,32 @@ async function loadCtrl(){
   try{const r=await fetch('/api/control');const d=await r.json();
   document.getElementById('linkDelay').value=d.link_delay||15;
   document.getElementById('roundDelay').value=d.round_delay||30;
+  document.getElementById('tgToken').value=d.telegram_token||'';
+  document.getElementById('tgChatId').value=d.telegram_chat_id||'';
   }catch{}
+}
+async function saveTelegram(){
+  const token=document.getElementById('tgToken').value.trim();
+  const chatId=document.getElementById('tgChatId').value.trim();
+  const r=await fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({telegram_token:token,telegram_chat_id:chatId})});
+  if(r.ok) toast('Telegram settings saved');
+}
+async function testTelegram(){
+  const token=document.getElementById('tgToken').value.trim();
+  const chatId=document.getElementById('tgChatId').value.trim();
+  if(!token || !chatId){
+    toast('Token and Chat ID are required to test');
+    return;
+  }
+  toast('Sending test message...');
+  try {
+    const r=await fetch('/api/telegram/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({telegram_token:token,telegram_chat_id:chatId})});
+    const d=await r.json();
+    if(d.success) toast('Test message sent! Check Telegram.');
+    else toast('Test failed: ' + d.error);
+  } catch(e) {
+    toast('Error sending test message');
+  }
 }
 loadCtrl();
 
@@ -361,6 +412,30 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 if len(IN_MEMORY_LOGS) > 200:
                     IN_MEMORY_LOGS.pop(0)
             self._json({"success":True})
+        elif self.path == '/api/telegram/test':
+            d = self._body()
+            token = d.get('telegram_token', '').strip()
+            chat_id = d.get('telegram_chat_id', '').strip()
+            if not token or not chat_id:
+                self._json({"success": False, "error": "Token and Chat ID are required."})
+                return
+            try:
+                url = f"https://api.telegram.org/bot{token}/sendMessage"
+                r = requests.post(url, json={
+                    "chat_id": chat_id,
+                    "text": "🔔 *TeraBox Automator: Test connection successful!* Your Telegram Bot is configured correctly.",
+                    "parse_mode": "Markdown"
+                }, timeout=10)
+                if r.status_code == 200:
+                    resp_json = r.json()
+                    if resp_json.get("ok"):
+                        self._json({"success": True})
+                    else:
+                        self._json({"success": False, "error": resp_json.get("description", "Unknown Telegram error")})
+                else:
+                    self._json({"success": False, "error": f"Telegram API returned status {r.status_code}"})
+            except Exception as e:
+                self._json({"success": False, "error": str(e)})
         else: self.send_response(404); self.end_headers()
 
     def do_DELETE(self):
@@ -395,10 +470,170 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
 
 
+def telegram_bot_loop():
+    print("[Telegram Bot] Background monitoring thread started.")
+    last_token = None
+    last_update_id = 0
+    
+    while True:
+        try:
+            # Load config from control.json or env vars
+            c = read_control()
+            token = c.get("telegram_token", "").strip() or os.environ.get("TELEGRAM_TOKEN", "").strip()
+            chat_id = c.get("telegram_chat_id", "").strip() or os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+            
+            if not token:
+                last_token = None
+                time.sleep(5)
+                continue
+                
+            # If the token changed, reset the update ID
+            if token != last_token:
+                print(f"[Telegram Bot] Token initialized/changed. Starting listener...")
+                last_token = token
+                last_update_id = 0
+                
+            # Poll updates
+            url = f"https://api.telegram.org/bot{token}/getUpdates?offset={last_update_id + 1}&timeout=10"
+            r = requests.get(url, timeout=15)
+            if r.status_code == 200:
+                data = r.json()
+                if data.get("ok"):
+                    for update in data.get("result", []):
+                        last_update_id = update.get("update_id")
+                        message = update.get("message")
+                        if not message:
+                            continue
+                            
+                        msg_chat_id = message.get("chat", {}).get("id")
+                        
+                        # Security Check
+                        if chat_id and str(msg_chat_id) != str(chat_id):
+                            continue
+                            
+                        text = message.get("text", "").strip()
+                        if not text:
+                            continue
+                            
+                        # Commands
+                        if text.startswith("/stats") or text.startswith("/status"):
+                            stats = {"total": 0, "success": 0, "errors": 0, "running": False}
+                            try:
+                                if os.path.exists(STATS_FILE):
+                                    with open(STATS_FILE, 'r') as f:
+                                        stats = json.load(f)
+                            except:
+                                pass
+                                
+                            c_state = read_control()
+                            status_str = "Running"
+                            if c_state.get("stopped"):
+                                status_str = "Stopped"
+                            elif c_state.get("paused"):
+                                status_str = "Paused"
+                            elif not stats.get("running"):
+                                status_str = "Sleeping (Between rounds)"
+                                
+                            tot = stats.get("total", 0)
+                            suc = stats.get("success", 0)
+                            err = stats.get("errors", 0)
+                            rate = f"{round(suc/tot*100)}%" if tot > 0 else "0%"
+                            
+                            reply = (
+                                f"📊 *TeraBox Referral Automator Stats*\n\n"
+                                f"⚫ *Status:* {status_str}\n"
+                                f"🔄 *Processed:* {tot}\n"
+                                f"✅ *Success:* {suc}\n"
+                                f"❌ *Errors:* {err}\n"
+                                f"📈 *Success Rate:* {rate}"
+                            )
+                            requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={
+                                "chat_id": msg_chat_id,
+                                "text": reply,
+                                "parse_mode": "Markdown"
+                            })
+                            
+                        elif text.startswith("/pause"):
+                            write_control({"paused": True})
+                            requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={
+                                "chat_id": msg_chat_id,
+                                "text": "⏸️ *Automation paused via Telegram.*",
+                                "parse_mode": "Markdown"
+                            })
+                            
+                        elif text.startswith("/resume"):
+                            write_control({"paused": False, "stopped": False})
+                            requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={
+                                "chat_id": msg_chat_id,
+                                "text": "▶️ *Automation resumed via Telegram.*",
+                                "parse_mode": "Markdown"
+                            })
+                            
+                        elif text.startswith("/stop"):
+                            write_control({"stopped": True})
+                            requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={
+                                "chat_id": msg_chat_id,
+                                "text": "🛑 *Automation stopped/killed via Telegram.*",
+                                "parse_mode": "Markdown"
+                            })
+                            
+                        elif text.startswith("/addlink "):
+                            link = text.replace("/addlink ", "").strip()
+                            if not link.startswith("http"):
+                                requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={
+                                    "chat_id": msg_chat_id,
+                                    "text": "❌ *Invalid URL. Must start with http.*",
+                                    "parse_mode": "Markdown"
+                                })
+                            else:
+                                ls = read_links()
+                                if link in ls:
+                                    requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={
+                                        "chat_id": msg_chat_id,
+                                        "text": "⚠️ *URL already exists in link list.*",
+                                        "parse_mode": "Markdown"
+                                    })
+                                else:
+                                    ls.append(link)
+                                    write_links(ls)
+                                    requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={
+                                        "chat_id": msg_chat_id,
+                                        "text": f"✅ *Link added:* `{link}`",
+                                        "parse_mode": "Markdown"
+                                    })
+                                    
+                        elif text.startswith("/help") or text.startswith("/start"):
+                            reply = (
+                                f"🤖 *TeraBox Automator Bot Commands*\n\n"
+                                f"/stats \- Get current stats\n"
+                                f"/pause \- Pause automation\n"
+                                f"/resume \- Resume automation\n"
+                                f"/stop \- Stop automation\n"
+                                f"/addlink `<url>` \- Add a referral link"
+                            )
+                            requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={
+                                "chat_id": msg_chat_id,
+                                "text": reply,
+                                "parse_mode": "MarkdownV2"
+                            })
+            elif r.status_code == 401:
+                last_token = None
+                time.sleep(10)
+            else:
+                time.sleep(5)
+        except Exception as e:
+            time.sleep(5)
+
+
 if __name__ == '__main__':
     # Initialize control file with defaults
     if not os.path.exists(CONTROL_FILE):
         write_control(DEFAULT_CONTROL)
+        
+    # Start Telegram status bot thread in background
+    t = threading.Thread(target=telegram_bot_loop, daemon=True)
+    t.start()
+        
     with socketserver.TCPServer(("", PORT), Handler) as h:
         print(f"\n  TeraBox Dashboard: http://localhost:{PORT}\n")
         try: h.serve_forever()

@@ -112,18 +112,46 @@ Watch the dashboard update in real-time!
 
 ---
 
-## Step 7: (Optional) Gemini Vision Fallback
+## Step 8: (Optional) Telegram Integration
 
-If standard selectors fail, you can enable LLM-powered element detection:
+You can control the bot and query real-time statistics directly from Telegram:
 
-```bash
-set GEMINI_API_KEY=your_api_key_here    # Windows
-export GEMINI_API_KEY=your_api_key_here  # macOS/Linux
+### 1. Create a Telegram Bot
+1. Search for **`@BotFather`** on Telegram.
+2. Send the command **/newbot** and follow the prompts to name your bot.
+3. Save the **HTTP API Token** provided (this is your `TELEGRAM_TOKEN`).
 
-python terabox_automator.py
+### 2. (Optional) Get your Chat ID (For Security)
+To restrict access to your bot so only you can use it:
+1. Search for **`@userinfobot`** on Telegram.
+2. Send any message to it to get your numerical **ID** (this is your `TELEGRAM_CHAT_ID`).
+
+### 3. Setup and Test via Dashboard (Recommended)
+You can configure and test your Telegram bot directly from the Web Dashboard:
+1. Open the Web Dashboard at **http://localhost:8080**.
+2. Locate the **Telegram Integration** card in the right column.
+3. Paste your **Bot Token** and **Allowed Chat ID**.
+4. Click **Save Settings**.
+5. Click **Test Connection**. Your bot will send a test message (`🔔 TeraBox Automator: Test connection successful!`) to your Telegram account to verify it works!
+
+### 4. Alternative: Setup via Environment Variables
+If preferred, you can also configure it via terminal variables before launching `dashboard.py`:
+
+**Windows:**
+```powershell
+set TELEGRAM_TOKEN=your_bot_token_here
+set TELEGRAM_CHAT_ID=your_chat_id_here
+
+python dashboard.py
 ```
 
-Get a free API key at [Google AI Studio](https://aistudio.google.com/).
+**macOS / Linux:**
+```bash
+export TELEGRAM_TOKEN="your_bot_token_here"
+export TELEGRAM_CHAT_ID="your_chat_id_here"
+
+python dashboard.py
+```
 
 ---
 
@@ -132,6 +160,9 @@ Get a free API key at [Google AI Studio](https://aistudio.google.com/).
 All settings use environment variables:
 
 ```bash
+# Web server port (default: 8080)
+set PORT=8080
+
 # Email provider (default: 1secmail, fallback: mailtm)
 set EMAIL_PROVIDER=1secmail
 
@@ -140,7 +171,21 @@ set DELAY_SECONDS=15
 
 # Delay between rounds (default: 30 seconds)
 set ROUND_DELAY=30
+
+# Telegram Bot API Token
+set TELEGRAM_TOKEN=your_telegram_token
+
+# Restrict bot to a specific user (optional)
+set TELEGRAM_CHAT_ID=your_telegram_chat_id
 ```
+
+### Telegram Commands
+* `/stats` - Get current processing statistics (processed, success, error, success rate).
+* `/pause` - Pause the automation.
+* `/resume` - Resume the automation.
+* `/stop` - Kill/stop the automation loop.
+* `/addlink <url>` - Append a new referral link directly from chat.
+* `/help` - Show available commands.
 
 ---
 
