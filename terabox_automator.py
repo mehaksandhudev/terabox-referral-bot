@@ -394,9 +394,10 @@ async def orchestrate_full_registration(terabox_referral_url):
 
         # 2. Initialize Playwright and navigate to TeraBox referral link
         logging.info("Initializing Playwright and launching browser...")
+        is_headless = os.environ.get("HEADLESS", "true").lower() == "true"
         async with async_playwright() as p:
             browser = await p.chromium.launch(
-                headless=True,
+                headless=is_headless,
                 args=[
                     "--no-sandbox",
                     "--disable-setuid-sandbox",
@@ -407,7 +408,7 @@ async def orchestrate_full_registration(terabox_referral_url):
                 ]
             )
             page = await browser.new_page()
-            logging.info("Playwright initialized, browser launched in headless mode, and new page created.")
+            logging.info(f"Playwright initialized (headless={is_headless}), browser launched, and new page created.")
 
             terabox_username = temp_email_address.split('@')[0]
             terabox_password = temp_email_password
