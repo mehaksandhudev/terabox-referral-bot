@@ -1,8 +1,0 @@
-{
-  "paused": false,
-  "stopped": false,
-  "round_delay": 30,
-  "link_delay": 15,
-  "telegram_token": "Telegram bot token",
-  "telegram_chat_id": "chat id ( optional ) "
-}

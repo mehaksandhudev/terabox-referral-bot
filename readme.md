@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Educational](https://img.shields.io/badge/Purpose-Educational_Only-red.svg)](#%EF%B8%8F-disclaimer)
 
-A fully automated TeraBox referral registration bot with a **real-time web dashboard**, **live log streaming**, **Docker Hub integration**, and **multi-link support**. Built with Playwright for browser automation and a custom Python dashboard server. Runs locally or in the cloud (Render, Docker, VPS).
+A fully automated TeraBox referral registration bot with a **real-time web dashboard**, **dynamic mobile IP rotation**, **automated password confirmation handling**, **credential storage**, and **multi-link support**. Built with Playwright for browser automation and a custom Python dashboard server. Runs locally or in the cloud (Render, Docker, VPS).
 
 > **⚠️ DISCLAIMER: This project is for educational and research purposes only. See [Disclaimer](#%EF%B8%8F-disclaimer).**
 
@@ -15,13 +15,17 @@ A fully automated TeraBox referral registration bot with a **real-time web dashb
 ## 📑 Table of Contents
 - [✨ Features](#-features)
 - [🖥️ Dashboard Preview](#️-dashboard-preview)
+- [📱 Dynamic Mobile IP Rotation (Free & Unlimited)](#-dynamic-mobile-ip-rotation-free--unlimited)
+- [🔐 Two-Field Password Entry & Credentials Saving](#-two-field-password-entry--credentials-saving)
+- [🌐 ISP Blocking & VPN Guide (Jio / Airtel / India)](#-isp-blocking--vpn-guide-jio--airtel--india)
 - [🐳 Docker & Cloud Integrations](#-docker--cloud-integrations)
 - [🚀 Quick Start](#-quick-start)
+- [🧪 Testing & Command Cheat Sheet](#-testing--command-cheat-sheet)
 - [📁 Project Structure](#-project-structure)
 - [⚙️ Configuration](#️-configuration)
 - [🔌 Dashboard API](#-dashboard-api)
 - [🔄 How It Works](#-how-it-works)
-- [🧪 Troubleshooting](#-troubleshooting)
+- [🛠️ Troubleshooting](#️-troubleshooting)
 - [🤝 Contributing](#-contributing)
 - [☕ Support](#-support)
 - [⚠️ Disclaimer](#️-disclaimer)
@@ -31,113 +35,177 @@ A fully automated TeraBox referral registration bot with a **real-time web dashb
 
 ## ✨ Features
 
-- **Fully automated registration** — navigates TeraBox, fills forms, handles email verification
-- **Multi-link support** — process multiple referral URLs in sequence, one account per link
-- **Continuous loop mode** — runs forever with configurable delays between links and rounds
-- **Live controls & kill switch** — Resume, Pause, and Stop automation instantly from the dashboard
-- **Real-time web dashboard** — clean, minimal dark UI with dynamic progress cards and live stats
-- **Dynamic delay adjustment** — update link and round delays on the fly without restarting
-- **Live log streaming** — real-time automation console logs streamed directly to the web dashboard
-- **Dashboard link management** — add/remove referral URLs directly from the UI
-- **Smart email provider fallback** — tries 1secmail first with automatic rate-limit delay, falls back to Mail.tm
-- **Robust verification code extraction** — extracts 4-digit code from email subject line
-- **3-attempt retry logic** — retries verification code on failure with automatic resend
-- **Multi-strategy button clicking** — text match → CSS selector → JavaScript DOM click fallbacks
-- **Post-click verification** — confirms each step actually worked before proceeding
-- **1-Click Docker & Docker Hub** — pre-built Docker image `mehakxsandhu/terabox-referral-bot` with GitHub Actions auto-build
-- **Render Cloud Ready** — includes `render.yaml` blueprint and RAM optimizations for free cloud hosting
-- **Telegram Bot Integration** — query statistics, pause/resume/stop automation, and add referral links remotely via Telegram chat
+- **Fully Automated Registration** — Navigates TeraBox referral landing pages, extracts verification codes from email subjects, and automates account creation end-to-end.
+- **Two-Field Password & Confirmation Support** — Handles the updated TeraBox registration flow with both "Enter password" and "Confirm password" fields, followed by automated Enter/Submit.
+- **Auto Credential Storage (`accounts.txt`)** — Automatically saves every created account with its email, password, public IP address, timestamp, and referral URL.
+- **Post-Registration Screen Inspection** — Automatically captures a high-resolution screenshot (`after_password_popup.png`) and logs page titles, headings, and interactive buttons upon login.
+- **Dynamic Mobile IP Rotation via Android ADB** — Automatically toggles phone Airplane Mode between registrations to obtain a fresh cellular IP from your mobile carrier (Jio, Airtel, etc.) in ~8 seconds.
+- **Real-Time Web Dashboard** — Dark-mode UI (Port 8080) displaying total processed, success/error metrics, live rate, delay sliders, and a full results table with Email, Password, and IP.
+- **Direct Accounts Download** — Download or view `accounts.txt` directly from the dashboard UI with one click.
+- **Silent Background Boot Mode (`HEADLESS=true`)** — Automatically starts on Windows boot with zero intrusive browser windows popping up; monitor everything via the web dashboard.
+- **Multi-Link Continuous Loop** — Cycles through multiple referral URLs in `referral_links.txt` with configurable delay intervals and kill switch.
+- **Dual Email Providers** — Uses Mail.tm as primary with 1secmail fallback support.
+- **Telegram Bot Integration** — Remotely monitor stats (`/stats`), pause/resume/stop automation, and add referral links via Telegram chat.
 
 ---
 
 ## 🖥️ Dashboard Preview
 
-The dashboard provides a clean, minimal interface for monitoring and controlling automation runs:
+Access the live dashboard at **`http://localhost:8080`**:
 
 | Section | Description |
 |---|---|
 | **Control Bar** | Resume, Pause, and Stop (Kill Switch) buttons, plus live delay inputs |
 | **Stats Cards** | Total processed, successful, errors, and real-time success rate |
-| **Progress Bar** | Visual progress indicator of current processing round |
-| **Referral Links** | Interactive panel to add/remove target referral links |
-| **Results Table** | Per-link execution status with timestamp and generated email |
-| **Live Logs** | Real-time console terminal streaming automation engine events |
+| **Progress Bar** | Visual indicator of current processing round |
+| **Referral Links** | Interactive panel to add/remove target referral links on the fly |
+| **Results Table** | Columns for `#`, `URL`, `Email`, `Password`, `IP`, `Status`, and `Timestamp` |
+| **Accounts Download** | Quick-action button to download `accounts.txt` directly from the browser |
+| **Live Logs** | Real-time terminal streaming automation events as they occur |
 
 ---
 
-## 🐳 Docker & Cloud Integrations
+## 📱 Dynamic Mobile IP Rotation (Free & Unlimited)
 
-### 1. Pre-built Docker Hub Image
-The image is hosted on Docker Hub at **[mehakxsandhu/terabox-referral-bot](https://hub.docker.com/r/mehakxsandhu/terabox-referral-bot)** and is automatically built and updated on every GitHub commit.
+Instead of paying for expensive proxy services, the bot natively supports **Dynamic Mobile IP Rotation** using an Android smartphone connected via USB:
 
-To pull the latest image:
-```bash
-docker pull mehakxsandhu/terabox-referral-bot:latest
-```
+1. **How It Works**:
+   - Mobile carriers (Jio, Airtel, Vi) use Carrier-Grade NAT (CGNAT).
+   - Whenever Airplane Mode is toggled on mobile data, the cellular tower assigns a **brand new mobile IP address**.
+2. **Automated ADB Integration**:
+   - The bot communicates directly with the phone via Android Debug Bridge (`adb.exe`).
+   - After each registration, it turns Airplane Mode ON for 3 seconds, turns it OFF, and waits 8 seconds for cellular data to reconnect.
+   - The new IP is verified and recorded with the newly created account.
+3. **Setup Requirements**:
+   - Android phone with an active mobile data SIM.
+   - Phone connected to PC via USB cable.
+   - **USB Tethering** turned ON in phone settings.
+   - **Wi-Fi** turned OFF on the phone.
+   - **USB Debugging** enabled in Developer Options.
 
-### 2. 1-Click Run Command
-Run the container locally using:
-```bash
-docker run -d -p 8080:7860 --name terabox-bot mehakxsandhu/terabox-referral-bot:latest
-```
+---
 
-### 3. Docker Compose
-Run in detached mode using compose:
-```bash
-docker compose up -d
-```
+## 🔐 Two-Field Password Entry & Credentials Saving
 
-### 4. Render Cloud Hosting
-Includes a `render.yaml` Blueprint specification for deploying to Render's free tier with automated port configuration and memory limits.
+TeraBox has updated its registration form to require both password entry and confirmation:
+1. **Detection**: Automatically discovers multiple `input[type="password"]` and confirm-password placeholders.
+2. **Filling**: Populates both fields with the generated secure password.
+3. **Submission**: Dispatches a keyboard `Enter` stroke and triggers active submit buttons (`Sign up`, `Register`, `Submit`, `Continue`).
+4. **Storage**: Every successful account is appended to `accounts.txt`:
+   ```text
+   user@uberip.com:Password123! | IP: 157.39.65.7 | Created: 2026-09-07 15:15:00 | Ref: https://1024terabox.com/s/...
+   ```
+
+---
+
+## 🌐 ISP Blocking & VPN Guide (Jio / Airtel / India)
+
+In India, telecom operators (Jio, Airtel, Vi) enforce regulatory blocks on `terabox.com` and its mirrors, causing `net::ERR_CONNECTION_TIMED_OUT` when accessed directly.
+
+### Recommended Solutions:
+- **Proton VPN (Recommended)**:
+  - Turn ON Proton VPN on your PC before running the bot.
+  - TeraBox loads instantly with zero timeouts.
+  - You can switch VPN servers (Netherlands, Japan, Romania, USA) to rotate IPs.
+- **Cloudflare WARP (1.1.1.1 with WARP)**:
+  - Free and fast; bypasses Indian ISP blocklists without throttling speed.
+- **Rotating Proxies**:
+  - Add your proxy addresses into `proxies.txt` for automatic external routing.
 
 ---
 
 ## 🚀 Quick Start
 
-**Prerequisites:** Docker OR Python 3.10+ & Git
+### 1. Prerequisites
+- Windows 10/11, macOS, or Linux
+- Python 3.10+
+- Chrome/Chromium (installed automatically via Playwright)
 
-### 🐳 Docker Setup (Fastest)
-
-```bash
-# Option A: Run directly from Docker Hub
-docker run -d -p 8080:7860 --name terabox-bot mehakxsandhu/terabox-referral-bot:latest
-
-# Option B: Run with Docker Compose
+### 2. Installation
+```powershell
+# Clone repository
 git clone https://github.com/mehaksandhudev/terabox-referral-bot.git
 cd terabox-referral-bot
-docker compose up -d
+
+# Create and activate virtual environment
+python -m venv venv
+.\venv\Scripts\activate        # Windows
+# source venv/bin/activate     # macOS / Linux
+
+# Install dependencies
+pip install -r requirements.txt
+playwright install chromium
 ```
-**Open http://localhost:8080** to view your dashboard.
+
+### 3. Add Your Referral Links
+Add your links to `referral_links.txt` (one per line):
+```text
+https://1024terabox.com/s/YOUR_REFERRAL_CODE
+```
+
+### 4. Run the Bot
+- **Full Automation with Dashboard (Auto-Restart)**:
+  ```powershell
+  .\start_automator.bat
+  ```
+  *Opens the dashboard at `http://localhost:8080` and runs the bot.*
+
+- **Add to Windows Boot (Runs Silently in Headless Mode on Startup)**:
+  Double-click `add_to_startup.bat`.
 
 ---
 
-### 💻 Manual Python Setup
+## 🧪 Testing & Command Cheat Sheet
 
-```bash
-# 1. Clone repository
-git clone https://github.com/mehaksandhudev/terabox-referral-bot.git
-cd terabox-referral-bot
+Here are all the commands to test and verify every component individually:
 
-# 2. Create virtual environment
-python -m venv venv
-.\venv\Scripts\activate        # Windows
-# source venv/bin/activate     # macOS/Linux
-
-# 3. Install dependencies
-pip install -r requirements.txt
-playwright install chromium
-
-# 4. Add your referral link
-echo https://your-terabox-referral-link > referral_links.txt
-
-# 5. Start dashboard (Terminal 1)
-python dashboard.py
-
-# 6. Start automation engine (Terminal 2)
-python terabox_automator.py
+### 1. Test a Single Registration (Live Browser GUI)
+Runs 1 referral link, opens Chrome visibly on screen, fills passwords, captures the new page, and saves credentials:
+```powershell
+.\venv\Scripts\python.exe test_single_run.py
 ```
 
-**Open http://localhost:8080** to see the dashboard.
+### 2. Test ADB Phone Connection
+Check if your Android phone is detected and authorized for IP rotation:
+```powershell
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" devices
+```
+*(Should output `List of devices attached` followed by your device ID and `device`)*
+
+### 3. Test Mobile IP Rotation Manually
+Test toggling Airplane mode on your phone and verifying that a new public IP is obtained:
+```powershell
+.\venv\Scripts\python.exe -c "import subprocess, time, requests; adb=r'$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe'; print('Current IP:', requests.get('https://api.ipify.org?format=json').json()['ip']); subprocess.run([adb, 'shell', 'cmd', 'connectivity', 'airplane-mode', 'enable']); time.sleep(3); subprocess.run([adb, 'shell', 'cmd', 'connectivity', 'airplane-mode', 'disable']); time.sleep(8); print('New Rotated IP:', requests.get('https://api.ipify.org?format=json').json()['ip'])"
+```
+
+### 4. Test TeraBox Network Reachability
+Verify if TeraBox is reachable on your current network or VPN:
+```powershell
+.\venv\Scripts\python.exe -c "import requests; print('Status:', requests.get('https://1024terabox.com', timeout=8).status_code)"
+```
+
+### 5. Run the Dashboard Server Only
+```powershell
+.\venv\Scripts\python.exe dashboard.py
+```
+*(Open http://localhost:8080)*
+
+### 6. Run the Automator Directly in GUI Mode (Visible Chrome)
+```powershell
+$env:HEADLESS="false"
+.\venv\Scripts\python.exe terabox_automator.py
+```
+
+### 7. Run the Automator Directly in Headless Mode (Invisible Chrome)
+```powershell
+$env:HEADLESS="true"
+.\venv\Scripts\python.exe terabox_automator.py
+```
+
+### 8. View Saved Account Credentials
+```powershell
+Get-Content accounts.txt
+```
 
 ---
 
@@ -145,120 +213,86 @@ python terabox_automator.py
 
 ```
 terabox-referral-bot/
-├── .github/workflows/
-│   └── docker-image.yml   # GitHub Actions: Auto-build & push to Docker Hub
-├── terabox_automator.py   # Main automation engine (Playwright + email handling)
-├── dashboard.py           # Web dashboard server (stats + logs + link management)
-├── referral_links.txt     # Referral URLs (one per line, editable via dashboard)
-├── Dockerfile             # Docker container configuration
-├── docker-compose.yml     # Docker Compose orchestration file
-├── render.yaml            # Render Cloud Blueprint setup
-├── requirements.txt       # Python dependencies (pinned for stability)
-├── start.sh               # Container entrypoint script
-├── stats.json             # Auto-generated: real-time stats for dashboard
-├── control.json           # Auto-generated: dashboard control states
-├── logs.json              # Auto-generated: log entries for dashboard
-├── SETUP.md               # Detailed setup instructions
-├── README.md              # Documentation
-├── .gitignore             # Git ignore rules
-└── LICENSE                # MIT License
+├── terabox_automator.py       # Core automation engine (Playwright, email, IP rotation)
+├── dashboard.py               # Local web dashboard server (Port 8080) + Telegram bot
+├── test_single_run.py         # Standalone single-link test runner
+├── start_automator.bat        # Windows auto-restart launcher with dashboard
+├── add_to_startup.bat         # Installs bot into Windows Startup folder
+├── referral_links.txt         # List of target referral URLs
+├── accounts.txt               # Saved credentials (email:password | IP | Timestamp)
+├── after_password_popup.png   # Screenshot captured after password submission
+├── stats.json                 # Real-time metrics and run results
+├── control.json               # Real-time bot controls (pause/resume/stop/delays)
+├── logs.json                  # Live log entries streamed to dashboard
+├── requirements.txt           # Python dependencies
+├── Dockerfile                 # Docker container specification
+├── docker-compose.yml         # Docker orchestration
+├── render.yaml                # Render Cloud Blueprint
+├── SETUP.md                   # Comprehensive step-by-step setup guide
+├── README.md                  # Project documentation
+└── LICENSE                    # MIT License
 ```
 
 ---
 
 ## ⚙️ Configuration
 
-Environment variables can be set locally, in Docker, or on Render:
+Settings can be managed via environment variables or directly inside `control.json` / Web Dashboard:
 
 | Variable | Default | Description |
 |---|---|---|
-| `PORT` | `7860` / `8080` | Port for the Web Dashboard server |
-| `EMAIL_PROVIDER` | `1secmail` | Primary email provider (`1secmail` or `mailtm`) |
-| `DELAY_SECONDS` | `15` | Delay between processing each link (seconds) |
-| `ROUND_DELAY` | `30` | Delay between rounds in continuous mode (seconds) |
+| `HEADLESS` | `true` (in bat) / `false` | Run browser in headless (invisible) or GUI mode |
+| `EMAIL_PROVIDER` | `mailtm` | Primary email provider (`mailtm` or `1secmail`) |
+| `PORT` | `8080` | Port for the web dashboard |
+| `DELAY_SECONDS` | `15` | Delay between each referral link (seconds) |
+| `ROUND_DELAY` | `30` | Delay between full rounds (seconds) |
+| `TELEGRAM_TOKEN` | `""` | Telegram Bot API token for remote monitoring |
+| `TELEGRAM_CHAT_ID` | `""` | Allowed Telegram chat ID for remote control |
 
 ---
 
 ## 🔌 Dashboard API
 
-The dashboard server provides REST API endpoints for external integrations:
-
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/` | Main dashboard web interface |
-| `GET` | `/api/stats` | Retrieve current automation statistics (JSON) |
-| `POST` | `/api/control` | Send Resume/Pause/Stop commands & update delays |
+| `GET` | `/` | Web dashboard interface |
+| `GET` | `/api/stats` | Current stats JSON (`total`, `success`, `errors`, `results`) |
+| `GET` | `/api/accounts` | Download or view `accounts.txt` directly |
+| `POST` | `/api/control` | Send Pause / Resume / Stop commands & update delays |
 | `GET` | `/api/links` | List all configured referral links |
 | `POST` | `/api/links` | Add a new referral link `{"url": "..."}` |
-| `DELETE` | `/api/links` | Remove a link `{"index": 0}` or clear all |
-| `GET` | `/api/logs` | Retrieve live log stream entries |
+| `DELETE` | `/api/links` | Clear or remove referral links |
+| `GET` | `/api/logs` | Real-time console log stream |
 
 ---
 
-## 🔄 How It Works
+## 🛠️ Troubleshooting
 
-```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│  Dashboard UI   │────▶│  referral_links   │◀────│  Automator      │
-│  (localhost:8080)│     │  .txt             │     │  (Playwright)   │
-│                 │     └──────────────────┘     │                 │
-│  - Add/Remove   │                              │  For each link:  │
-│    links        │     ┌──────────────────┐     │  1. Create email │
-│  - Pause/Resume │◀────│  stats & control │◀────│  2. Open browser │
-│  - Live logs    │     │  .json           │     │  3. Navigate URL │
-└─────────────────┘     └──────────────────┘     │  4. Sign up      │
-                                                 │  5. Verify code  │
-                                                 │  6. Complete reg │
-                                                 └─────────────────┘
-```
+| Issue | Cause | Solution |
+|---|---|---|
+| `net::ERR_CONNECTION_TIMED_OUT` | Indian ISP block (Jio / Airtel) | Connect Proton VPN or Cloudflare WARP before running. |
+| `Found 2 password input fields` | Normal behavior | TeraBox now requires Password + Confirm Password. The bot fills both automatically. |
+| `No module named 'nest_asyncio'` | Virtual environment not active | Run `.\venv\Scripts\activate` before launching scripts. |
+| `ADB device unauthorized` | Phone authorization prompt | Unlock phone and tap "Always allow from this computer" on the USB Debugging dialog. |
+| `Mobile IP not changing` | Phone connected to Wi-Fi | Turn OFF Wi-Fi on the phone; ensure Mobile Data & USB Tethering are ON. |
 
 ---
 
-## 🧪 Troubleshooting
+## ☕ Support & Contributing
 
-| Issue | Solution |
-|---|---|
-| `Playwright binary mismatch` | Use pre-built Docker image or run `playwright install chromium` |
-| `Mail.tm 429 Too Many Requests` | Handled automatically with rate-limit backoff delay |
-| `Render Web Service crash` | Ensure memory flags `--no-sandbox --disable-dev-shm-usage` are enabled |
-| `Dashboard not updating` | Verify both `dashboard.py` and `terabox_automator.py` are active |
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## ☕ Support
-
-If this project helped you, consider buying me a coffee!
-
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-ffdd00?style=flat-square&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/mehaksandhudev)
+- **Pull Requests**: Contributions and bug fixes are welcome! Feel free to open an issue or PR.
+- **Support**: If this project helped you, consider supporting via [Buy Me A Coffee](https://buymeacoffee.com/mehaksandhudev).
 
 ---
 
 ## ⚠️ Disclaimer
 
-> **This project is for EDUCATIONAL and RESEARCH purposes only.**
+> **This project is strictly for EDUCATIONAL and RESEARCH purposes.**
 >
-> This tool was built to learn about browser automation, temporary email API integrations, Docker containerization, and web dashboards.
->
-> **Do NOT use this tool to violate any website's Terms of Service.** The authors take no responsibility for misuse of this software.
+> It demonstrates automated browser workflows, dynamic mobile IP rotation, RESTful local dashboards, and temporary email integration. The authors assume no responsibility for any misuse or violation of third-party Terms of Service.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
-
----
-
-<p align="center">
-  Built with ❤️ by <a href="https://github.com/mehaksandhudev">mehaksandhudev</a>
-</p>
+Licensed under the [MIT License](LICENSE).

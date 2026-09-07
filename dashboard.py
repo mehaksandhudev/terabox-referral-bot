@@ -17,6 +17,7 @@ STATS_FILE = os.path.join(SCRIPT_DIR, "stats.json")
 LINKS_FILE = os.path.join(SCRIPT_DIR, "referral_links.txt")
 LOGS_FILE = os.path.join(SCRIPT_DIR, "logs.json")
 CONTROL_FILE = os.path.join(SCRIPT_DIR, "control.json")
+ACCOUNTS_FILE = os.path.join(SCRIPT_DIR, "accounts.txt")
 
 DEFAULT_CONTROL = {"paused": False, "stopped": False, "round_delay": 30, "link_delay": 15, "telegram_token": "", "telegram_chat_id": ""}
 
@@ -77,7 +78,8 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .btn-amber{background:var(--amber);color:#000}.btn-amber:hover{opacity:.85}
 .btn-red{background:var(--red);color:#fff}.btn-red:hover{opacity:.85}
 .btn-sm{padding:4px 8px;font-size:11px;border-radius:4px}
-.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-g:hover{color:var(--red);border-color:var(--red)}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-g:hover{color:var(--text);border-color:var(--accent);background:rgba(255,255,255,.04)}
+.btn-danger{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-danger:hover{color:var(--red);border-color:var(--red);background:rgba(239,68,68,.08)}
 
 .ll{list-style:none;max-height:180px;overflow-y:auto}
 .ll::-webkit-scrollbar{width:3px}.ll::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
@@ -88,9 +90,11 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .lf{display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--border-s);margin-top:10px}
 .lf span{font-size:12px;color:var(--muted)}
 
-.tw{overflow-x:auto}
+.tw{max-height:360px;overflow-y:auto;overflow-x:auto}
+.tw::-webkit-scrollbar{width:4px;height:4px}
+.tw::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
 table{width:100%;border-collapse:collapse}
-th{text-align:left;padding:9px 18px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border-s);background:rgba(0,0,0,.2)}
+th{position:sticky;top:0;z-index:10;background:#18181b;text-align:left;padding:9px 18px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border-s)}
 td{padding:9px 18px;font-size:13px;border-bottom:1px solid var(--border-s);color:var(--text2)}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:rgba(255,255,255,.02)}
@@ -101,13 +105,13 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .t-run{background:rgba(234,179,8,.1);color:var(--amber)}
 .empty{text-align:center;padding:32px;color:var(--muted);font-size:13px}
 
-.log-v{max-height:340px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.8;padding:2px 0}
+.log-v{max-height:340px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.65;padding:6px 10px;background:rgba(0,0,0,.25);border-radius:6px;border:1px solid var(--border)}
 .log-v::-webkit-scrollbar{width:3px}.log-v::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-.log-l{padding:1px 0;color:var(--muted)}
-.log-l .ts{color:var(--muted);opacity:.6}
-.log-l .INFO{color:var(--text2)}
-.log-l .WARNING{color:var(--amber)}
-.log-l .ERROR,.log-l .CRITICAL{color:var(--red)}
+.log-l{padding:2px 0;color:var(--text2);word-break:break-all;white-space:pre-wrap}
+.log-l .ts{color:var(--muted);opacity:.7;font-size:11px}
+.log-l .INFO{color:#38bdf8;font-weight:600}
+.log-l .WARNING{color:var(--amber);font-weight:600}
+.log-l .ERROR,.log-l .CRITICAL{color:var(--red);font-weight:600}
 
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .toast{position:fixed;bottom:24px;right:24px;padding:10px 16px;border-radius:6px;font-size:13px;font-weight:500;z-index:100;transform:translateY(80px);opacity:0;transition:all .25s;background:var(--surface2);color:var(--text);border:1px solid var(--border)}
@@ -164,7 +168,14 @@ tr:hover td{background:rgba(255,255,255,.02)}
   <div class="cols">
     <div>
       <div class="p">
-        <div class="p-h"><h2>Referral Links</h2><span class="bg" id="lC">0</span></div>
+        <div class="p-h">
+          <h2>Referral Links</h2>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span class="bg" id="lC">0</span>
+            <button class="btn btn-sm btn-g" onclick="document.getElementById('txtUpload').click()" title="Upload .txt file with referral URLs">Upload .txt</button>
+            <input type="file" id="txtUpload" accept=".txt" style="display:none" onchange="uploadTxt(event)" />
+          </div>
+        </div>
         <div class="p-b">
           <div class="add-row">
             <input type="text" id="uI" placeholder="Paste referral URL..." />
@@ -175,10 +186,16 @@ tr:hover td{background:rgba(255,255,255,.02)}
         </div>
       </div>
       <div class="p">
-        <div class="p-h"><h2>Results</h2></div>
+        <div class="p-h">
+          <h2>Results</h2>
+          <div style="display:flex;gap:6px;align-items:center">
+            <a href="/api/accounts" target="_blank" class="btn btn-sm btn-g" style="text-decoration:none;font-size:11px">Download accounts.txt</a>
+            <button class="btn btn-sm btn-danger" onclick="clearResults()" title="Clear past results from table">Clear</button>
+          </div>
+        </div>
         <div class="tw">
-          <table><thead><tr><th>#</th><th>URL</th><th>Email</th><th>Status</th><th>Time</th></tr></thead>
-          <tbody id="rB"><tr><td colspan="5" class="empty">No results yet</td></tr></tbody></table>
+          <table><thead><tr><th>#</th><th>URL</th><th>Email</th><th>Password</th><th>IP</th><th>Status</th><th>Time</th></tr></thead>
+          <tbody id="rB"><tr><td colspan="7" class="empty">No results yet</td></tr></tbody></table>
         </div>
       </div>
     </div>
@@ -201,7 +218,13 @@ tr:hover td{background:rgba(255,255,255,.02)}
         </div>
       </div>
       <div class="p">
-        <div class="p-h"><h2>Live Logs</h2><span class="bg" id="lgC">0 entries</span></div>
+        <div class="p-h">
+          <h2>Live Logs</h2>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span class="bg" id="lgC">0 entries</span>
+            <button class="btn btn-sm btn-danger" onclick="clearLogs()" title="Clear console logs">Clear</button>
+          </div>
+        </div>
         <div class="p-b" style="padding:8px 14px">
           <div class="log-v" id="lgV">
             <div class="log-l" style="color:var(--muted)">Waiting for automation...</div>
@@ -279,8 +302,72 @@ async function addL(){
   const d=await r.json();if(d.success){inp.value='';toast('Link added');drawL(d.links)}else toast(d.error||'Failed')
 }
 async function delL(i){const r=await fetch('/api/links',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({index:i})});const d=await r.json();if(d.success)drawL(d.links)}
-async function clrL(){if(!confirm('Clear all?'))return;const r=await fetch('/api/links',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({clear_all:true})});const d=await r.json();if(d.success)drawL(d.links)}
+async function clrL(){if(!confirm('Clear all links?'))return;const r=await fetch('/api/links',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({clear_all:true})});const d=await r.json();if(d.success)drawL(d.links)}
 document.getElementById('uI').addEventListener('keydown',e=>{if(e.key==='Enter')addL()});
+
+async function uploadTxt(event){
+  const file = event.target.files && event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const text = e.target.result || '';
+    // Pickup every link in the file matching http or https
+    const rawMatches = text.match(/https?:\/\/[^\s"'<>\\]+/g) || [];
+    const cleaned = rawMatches.map(m => m.replace(/[\.,;:)]+$/, '')).filter(m => m.startsWith('http'));
+    if(!cleaned.length){
+      toast('No links found in file');
+      event.target.value = '';
+      return;
+    }
+    try{
+      const r = await fetch('/api/links/bulk', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({links: cleaned})
+      });
+      const d = await r.json();
+      if(d.success){
+        toast(`Imported ${d.added} new link(s) (${cleaned.length} found)`);
+        drawL(d.links);
+      } else {
+        toast(d.error || 'Failed to upload links');
+      }
+    }catch(err){
+      toast('Error uploading file');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+async function clearResults(){
+  if(!confirm('Clear all past results from table?')) return;
+  try{
+    const r = await fetch('/api/stats', {method: 'DELETE'});
+    const d = await r.json();
+    if(d.success){
+      toast('Results cleared');
+      refStats();
+    } else {
+      toast('Failed to clear results');
+    }
+  }catch{
+    toast('Error clearing results');
+  }
+}
+
+async function clearLogs(){
+  try{
+    const r = await fetch('/api/logs', {method: 'DELETE'});
+    const d = await r.json();
+    if(d.success){
+      toast('Logs cleared');
+      refLogs();
+    }
+  }catch{
+    toast('Error clearing logs');
+  }
+}
 
 // Stats
 async function refStats(){
@@ -307,11 +394,28 @@ async function refStats(){
     }
     else{dot.className='dot idle';lbl.textContent='Idle'}
     const tb=document.getElementById('rB');
-    if(!res.length){tb.innerHTML='<tr><td colspan="5" class="empty">No results yet</td></tr>';return}
-    tb.innerHTML=res.map((r,i)=>{
-      const c=r.status==='success'?'t-ok':(r.status==='running'?'t-run':'t-err');
-      const t=r.status==='success'?'OK':(r.status==='running'?'Running':'Error');
-      return`<tr><td>${i+1}</td><td class="mono" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.url||''}">${r.url||'--'}</td><td class="mono" style="color:var(--accent)">${r.email||'--'}</td><td><span class="tag ${c}">${t}</span></td><td class="mono">${r.timestamp||'--'}</td></tr>`;
+    if(!res.length){tb.innerHTML='<tr><td colspan="7" class="empty">No results yet</td></tr>';return}
+    
+    // Pin active running item to the top, then show newest to oldest
+    const indexed = res.map((r, i) => ({ ...r, originalIndex: i + 1 }));
+    const runningItems = indexed.filter(r => r.status === 'running');
+    const pastItems = indexed.filter(r => r.status !== 'running').reverse();
+    const sorted = [...runningItems, ...pastItems];
+
+    tb.innerHTML=sorted.map(r=>{
+      const isRun = r.status==='running';
+      const c=r.status==='success'?'t-ok':(isRun?'t-run':'t-err');
+      const t=r.status==='success'?'OK':(isRun?'Running':'Error');
+      const rowStyle = isRun ? 'background:rgba(234,179,8,.12);border-left:3px solid var(--amber)' : '';
+      return`<tr style="${rowStyle}">
+        <td>${r.originalIndex}</td>
+        <td class="mono" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.url||''}">${r.url||'--'}</td>
+        <td class="mono" style="color:var(--accent)">${r.email||'--'}</td>
+        <td class="mono" style="color:var(--text);user-select:all" title="Click to copy">${r.password||'--'}</td>
+        <td class="mono" style="color:var(--muted)">${r.ip||'--'}</td>
+        <td><span class="tag ${c}">${t}</span></td>
+        <td class="mono">${r.timestamp||'--'}</td>
+      </tr>`;
     }).join('');
   }catch{}
 }
@@ -387,6 +491,17 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self._json({"logs": IN_MEMORY_LOGS})
         elif self.path.startswith('/api/control'):
             self._json(read_control())
+        elif self.path == '/api/accounts':
+            if os.path.exists(ACCOUNTS_FILE):
+                with open(ACCOUNTS_FILE, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/plain; charset=utf-8')
+                self.send_header('Content-Disposition', 'attachment; filename="accounts.txt"')
+                self.end_headers()
+                self.wfile.write(content.encode('utf-8'))
+            else:
+                self.send_response(404); self.end_headers()
         else:
             self.send_response(404); self.end_headers()
 
@@ -401,6 +516,18 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self._json({"success":False,"error":"Already exists"}); return
             ls.append(url); write_links(ls)
             self._json({"success":True,"links":ls})
+        elif self.path == '/api/links/bulk':
+            d = self._body()
+            new_links = d.get('links', [])
+            ls = read_links()
+            added = 0
+            for u in new_links:
+                u = u.strip()
+                if u.startswith('http') and u not in ls:
+                    ls.append(u)
+                    added += 1
+            write_links(ls)
+            self._json({"success":True,"links":ls,"added":added})
         elif self.path == '/api/control':
             d = self._body()
             updated = write_control(d)
@@ -447,6 +574,18 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 if 0 <= i < len(ls): ls.pop(i)
             write_links(ls)
             self._json({"success":True,"links":ls})
+        elif self.path.startswith('/api/stats'):
+            try:
+                default_stats = {"total":0,"success":0,"errors":0,"total_links":0,"running":False,"results":[]}
+                with open(STATS_FILE, 'w') as f:
+                    json.dump(default_stats, f, indent=2)
+                self._json({"success":True})
+            except Exception as e:
+                self._json({"success":False,"error":str(e)})
+        elif self.path.startswith('/api/logs'):
+            global IN_MEMORY_LOGS
+            IN_MEMORY_LOGS = []
+            self._json({"success":True})
         else: self.send_response(404); self.end_headers()
 
     def _body(self):
@@ -604,12 +743,12 @@ def telegram_bot_loop():
                                     
                         elif text.startswith("/help") or text.startswith("/start"):
                             reply = (
-                                f"🤖 *TeraBox Automator Bot Commands*\n\n"
-                                f"/stats \- Get current stats\n"
-                                f"/pause \- Pause automation\n"
-                                f"/resume \- Resume automation\n"
-                                f"/stop \- Stop automation\n"
-                                f"/addlink `<url>` \- Add a referral link"
+                                r"🤖 *TeraBox Automator Bot Commands*" "\n\n"
+                                r"/stats \- Get current stats" "\n"
+                                r"/pause \- Pause automation" "\n"
+                                r"/resume \- Resume automation" "\n"
+                                r"/stop \- Stop automation" "\n"
+                                r"/addlink `<url>` \- Add a referral link"
                             )
                             requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={
                                 "chat_id": msg_chat_id,
@@ -625,7 +764,29 @@ def telegram_bot_loop():
             time.sleep(5)
 
 
+BANNER = r"""
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║   ████████╗███████╗██████╗  █████╗ ██████╗  ██████╗ ██╗  ██╗                 ║
+║   ╚══██╔══╝██╔════╝██╔══██╗██╔══██╗██╔══██╗██╔═══██╗╚██╗██╔╝                 ║
+║      ██║   █████╗  ██████╔╝███████║██████╔╝██║   ██║ ╚███╔╝                  ║
+║      ██║   ██╔══╝  ██╔══██╗██╔══██║██╔══██╗██║   ██║ ██╔██╗                  ║
+║      ██║   ███████╗██║  ██║██║  ██║██████╔╝╚██████╔╝██╔╝ ██╗                 ║
+║      ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚═╝  ╚═╝                 ║
+║                                                                              ║
+║                 ⚡ ULTIMATE REFERRAL AUTOMATION SUITE ⚡                     ║
+║                                                                              ║
+║   ➤ Created by : Mehak Sandhu (@mehaksandhudev)                              ║
+║   ➤ GitHub     : https://github.com/mehaksandhudev                           ║
+║   ➤ Project    : TeraBox Referral & Account Automation Engine                ║
+║   ➤ Features   : Dynamic Mobile IP Rotation • Anti-Detection • Live Web UI   ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+"""
+
+
 if __name__ == '__main__':
+    print(BANNER)
     # Initialize control file with defaults
     if not os.path.exists(CONTROL_FILE):
         write_control(DEFAULT_CONTROL)
@@ -635,6 +796,6 @@ if __name__ == '__main__':
     t.start()
         
     with socketserver.TCPServer(("", PORT), Handler) as h:
-        print(f"\n  TeraBox Dashboard: http://localhost:{PORT}\n")
+        print(f"  [*] TeraBox Web Dashboard running at: http://localhost:{PORT}\n")
         try: h.serve_forever()
         except KeyboardInterrupt: print("\n  Stopped.")

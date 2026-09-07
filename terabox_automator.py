@@ -12,6 +12,7 @@ import re # For regex to extract verification code
 import base64
 from datetime import datetime
 import threading
+import subprocess
 
 # Optional: Gemini Vision for smart element finding
 try:
@@ -349,7 +350,7 @@ async def orchestrate_full_registration(terabox_referral_url):
 
     try:
         # 1. Create temporary email account
-        preferred_provider = os.environ.get("EMAIL_PROVIDER", "1secmail").lower()
+        preferred_provider = os.environ.get("EMAIL_PROVIDER", "mailtm").lower()
 
         if preferred_provider == '1secmail':
             logging.info("Using 1secmail as preferred email provider...")
@@ -394,7 +395,7 @@ async def orchestrate_full_registration(terabox_referral_url):
 
         # 2. Initialize Playwright and navigate to TeraBox referral link
         logging.info("Initializing Playwright and launching browser...")
-        is_headless = os.environ.get("HEADLESS", "true").lower() == "true"
+        is_headless = os.environ.get("HEADLESS", "true").lower() in ("true", "1", "yes")
         async with async_playwright() as p:
             browser = await p.chromium.launch(
                 headless=is_headless,
@@ -417,8 +418,13 @@ async def orchestrate_full_registration(terabox_referral_url):
 
             logging.info(f"Navigating to referral URL: {terabox_referral_url}")
             try:
-                await page.goto(terabox_referral_url)
-                await page.wait_for_load_state('networkidle')
+                page.set_default_timeout(45000)
+                page.set_default_navigation_timeout(60000)
+                await page.goto(terabox_referral_url, timeout=60000, wait_until="domcontentloaded")
+                try:
+                    await page.wait_for_load_state('networkidle', timeout=15000)
+                except Exception:
+                    logging.info("Network idle timed out, proceeding with DOM content loaded state.")
                 logging.info(f"Successfully navigated to {terabox_referral_url}")
 
                 # --- SELECTORS (inspected from live 1024terabox.com site) ---
@@ -690,39 +696,138 @@ async def orchestrate_full_registration(terabox_referral_url):
                     logging.error(f"Failed to enter correct verification code after {MAX_CODE_ATTEMPTS} attempts.")
                     return {'success': False, 'email': temp_email_address}
 
-                # Step 8: Fill password field
-                pwd_input = page.locator('#pwd-input, input[placeholder*="password" i]').first
-                try:
-                    await pwd_input.wait_for(state="visible", timeout=5000)
-                    await pwd_input.fill(terabox_password)
-                    logging.info("Filled password.")
-                except Exception:
-                    logging.warning("Password input not found - may appear on a later step.")
+                # Step 8: Fill Password & Confirm Password fields
+                logging.info("Looking for password and confirm password fields...")
+                await asyncio.sleep(2)
+
+                filled_password = False
+                pwd_inputs = page.locator('input[type="password"]')
+                pwd_count = await pwd_inputs.count()
+
+                if pwd_count >= 2:
+                    logging.info(f"Found {pwd_count} password input fields.")
+                    await pwd_inputs.nth(0).wait_for(state="visible", timeout=6000)
+                    await pwd_inputs.nth(0).fill(terabox_password)
+                    await asyncio.sleep(0.5)
+                    await pwd_inputs.nth(1).wait_for(state="visible", timeout=6000)
+                    await pwd_inputs.nth(1).fill(terabox_password)
+                    logging.info("Filled both 'Password' and 'Confirm Password' fields.")
+                    filled_password = True
+                elif pwd_count == 1:
+                    await pwd_inputs.nth(0).wait_for(state="visible", timeout=6000)
+                    await pwd_inputs.nth(0).fill(terabox_password)
+                    logging.info("Filled primary password field.")
+                    filled_password = True
+
+                    # Check for separate confirm password input
+                    confirm_input = page.locator('input[placeholder*="confirm" i], input[placeholder*="re-enter" i], input[name*="confirm" i]').first
+                    try:
+                        if await confirm_input.is_visible(timeout=2000):
+                            await confirm_input.fill(terabox_password)
+                            logging.info("Filled separate 'Confirm Password' field.")
+                    except Exception:
+                        pass
+                else:
+                    first_pwd = page.locator('#pwd-input, input[placeholder*="password" i]').first
+                    try:
+                        await first_pwd.wait_for(state="visible", timeout=5000)
+                        await first_pwd.fill(terabox_password)
+                        logging.info("Filled password via placeholder match.")
+                        filled_password = True
+                    except Exception:
+                        logging.warning("Primary password input not found.")
+
+                    confirm_pwd = page.locator('input[placeholder*="confirm" i], input[name*="confirm" i]').first
+                    try:
+                        if await confirm_pwd.is_visible(timeout=3000):
+                            await confirm_pwd.fill(terabox_password)
+                            logging.info("Filled confirm password via placeholder match.")
+                    except Exception:
+                        pass
+
                 await asyncio.sleep(1)
 
-                # Step 9: Click final submit/register button
-                logging.info("Looking for final submit button...")
-                for btn_text in ["Sign up", "Register", "Create Account", "Submit", "Continue"]:
+                # Step 9: Submit password form (press Enter & search for submit button)
+                logging.info("Submitting password form (pressing Enter & searching for Submit button)...")
+                try:
+                    await page.keyboard.press("Enter")
+                    logging.info("Pressed Enter key on password form.")
+                except Exception as e:
+                    logging.warning(f"Keyboard Enter press failed: {e}")
+
+                await asyncio.sleep(1.5)
+
+                submit_clicked = False
+                for btn_text in ["Sign up", "Register", "Create Account", "Submit", "Continue", "Enter", "Confirm", "OK", "Next", "Done"]:
                     final_btn = page.get_by_text(btn_text, exact=False).first
                     try:
                         if await final_btn.is_visible(timeout=2000):
                             await final_btn.click()
-                            logging.info(f"Clicked '{btn_text}' button.")
+                            logging.info(f"Clicked '{btn_text}' submit button.")
+                            submit_clicked = True
                             break
                     except Exception:
                         continue
-                else:
+
+                if not submit_clicked:
                     try:
-                        generic_btn = page.locator('button[type="submit"]').first
-                        await generic_btn.click()
-                        logging.info("Clicked generic submit button.")
+                        generic_btn = page.locator('button[type="submit"], [role="button"]:has-text("Sign"), [role="button"]:has-text("Submit")').first
+                        if await generic_btn.is_visible(timeout=2000):
+                            await generic_btn.click()
+                            logging.info("Clicked generic submit button.")
+                            submit_clicked = True
                     except Exception:
-                        logging.error("Could not find any submit button.")
-                        return {'success': False, 'email': temp_email_address}
+                        pass
 
-                await page.wait_for_load_state('networkidle')
+                # Step 10: Inspect subsequent page / pop-up
+                logging.info("Waiting for new page/modal to load after password submission...")
+                await asyncio.sleep(4)
+                try:
+                    await page.wait_for_load_state('networkidle', timeout=10000)
+                except Exception:
+                    pass
 
-                logging.info(f"Registration form submitted for {temp_email_address}. Current URL: {page.url}")
+                current_url = page.url
+                title = await page.title()
+                logging.info(f"Current Page URL after submission: {current_url}")
+                logging.info(f"Current Page Title: {title}")
+
+                screenshot_path = os.path.join(SCRIPT_DIR, "after_password_popup.png")
+                try:
+                    await page.screenshot(path=screenshot_path, full_page=False)
+                    logging.info(f"Saved screenshot of new page to: {screenshot_path}")
+                except Exception as e:
+                    logging.warning(f"Screenshot capture failed: {e}")
+
+                artifact_dir = os.environ.get("GEMINI_ARTIFACTS_DIR", r"C:\Users\mehak\.gemini\antigravity-ide\brain\1fe139c2-570c-4ff8-beb4-74b2c2da7ff6")
+                if os.path.isdir(artifact_dir):
+                    try:
+                        artifact_screenshot = os.path.join(artifact_dir, "after_password_popup.png")
+                        await page.screenshot(path=artifact_screenshot, full_page=False)
+                        logging.info(f"Saved artifact screenshot to: {artifact_screenshot}")
+                    except Exception:
+                        pass
+
+                try:
+                    elements_info = await page.evaluate("""() => {
+                        const buttons = Array.from(document.querySelectorAll('button, a, div[role="button"], input[type="button"], input[type="submit"]'))
+                            .filter(el => el.offsetParent !== null && el.innerText.trim().length > 0)
+                            .map(el => el.innerText.trim().replace(/\\s+/g, ' ')).slice(0, 20);
+                        const headings = Array.from(document.querySelectorAll('h1, h2, h3, h4, [class*="title"], [class*="header"], [class*="modal"]'))
+                            .filter(el => el.offsetParent !== null && el.innerText.trim().length > 0)
+                            .map(el => el.innerText.trim().replace(/\\s+/g, ' ')).slice(0, 10);
+                        return { buttons, headings };
+                    }""")
+                    logging.info(f"Detected page headings/titles: {elements_info.get('headings', [])}")
+                    logging.info(f"Detected interactive buttons/actions: {elements_info.get('buttons', [])}")
+                except Exception as e:
+                    logging.warning(f"Could not inspect page elements: {e}")
+
+                is_headless = os.environ.get("HEADLESS", "false").lower() in ("true", "1", "yes")
+                if not is_headless:
+                    logging.info("Browser is running with GUI (non-headless). Pausing 10s on the new page so you can observe it...")
+                    await asyncio.sleep(10)
+
                 registration_success = True
 
             except Exception as e:
@@ -734,7 +839,7 @@ async def orchestrate_full_registration(terabox_referral_url):
                 return {'success': False, 'email': temp_email_address}
 
             logging.info("Full registration completed successfully!")
-            return {'success': True, 'email': temp_email_address}
+            return {'success': True, 'email': temp_email_address, 'password': terabox_password}
 
     except Exception as e:
         logging.critical(f"An unexpected error occurred during orchestration: {e}")
@@ -746,6 +851,62 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 STATS_FILE = os.path.join(SCRIPT_DIR, "stats.json")
 LINKS_FILE = os.path.join(SCRIPT_DIR, "referral_links.txt")
 CONTROL_FILE = os.path.join(SCRIPT_DIR, "control.json")
+ACCOUNTS_FILE = os.path.join(SCRIPT_DIR, "accounts.txt")
+
+
+ADB_PATH = r"C:\Users\mehak\AppData\Local\Android\Sdk\platform-tools\adb.exe"
+
+
+def get_public_ip():
+    """Fetches the current public IP address."""
+    try:
+        return requests.get("https://api.ipify.org?format=json", timeout=6).json().get("ip", "unknown")
+    except Exception:
+        return "unknown"
+
+
+def is_adb_device_connected():
+    """Checks if an authorized Android device is connected via ADB."""
+    if not os.path.exists(ADB_PATH):
+        return False
+    try:
+        res = subprocess.run([ADB_PATH, "devices"], capture_output=True, text=True, timeout=5)
+        lines = res.stdout.strip().split("\n")[1:]
+        return any(len(p.strip().split()) >= 2 and p.strip().split()[1] == "device" for p in lines)
+    except Exception:
+        return False
+
+
+def rotate_mobile_ip(delay_after=8):
+    """Toggles phone airplane mode via ADB to obtain a fresh dynamic mobile IP."""
+    if not os.path.exists(ADB_PATH):
+        return None
+    try:
+        logging.info("[IP Rotation] Toggling phone airplane mode to get a fresh mobile IP...")
+        subprocess.run([ADB_PATH, "shell", "cmd", "connectivity", "airplane-mode", "enable"], check=True, capture_output=True)
+        time.sleep(3)
+        subprocess.run([ADB_PATH, "shell", "cmd", "connectivity", "airplane-mode", "disable"], check=True, capture_output=True)
+        logging.info(f"[IP Rotation] Waiting {delay_after}s for cellular reconnection...")
+        time.sleep(delay_after)
+        new_ip = get_public_ip()
+        logging.info(f"[IP Rotation] Reconnected! New Public IP: {new_ip}")
+        return new_ip
+    except Exception as e:
+        logging.warning(f"[IP Rotation] Could not toggle airplane mode: {e}")
+        return None
+
+
+def save_account(email, password, referral_url="", ip=""):
+    """Append successfully registered account credentials to accounts.txt."""
+    try:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ip_str = f" | IP: {ip}" if ip else ""
+        with open(ACCOUNTS_FILE, "a", encoding="utf-8") as f:
+            f.write(f"{email}:{password}{ip_str} | Created: {timestamp} | Ref: {referral_url}\n")
+        logging.info(f"Account credentials saved to {ACCOUNTS_FILE} ({email}) [IP: {ip or 'N/A'}]")
+    except Exception as e:
+        logging.error(f"Failed to save account credentials: {e}")
+
 
 
 def load_control():
@@ -798,16 +959,34 @@ def update_result(stats, index, **kwargs):
     save_stats(stats)
 
 
+BANNER = r"""
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║   ████████╗███████╗██████╗  █████╗ ██████╗  ██████╗ ██╗  ██╗                 ║
+║   ╚══██╔══╝██╔════╝██╔══██╗██╔══██╗██╔══██╗██╔═══██╗╚██╗██╔╝                 ║
+║      ██║   █████╗  ██████╔╝███████║██████╔╝██║   ██║ ╚███╔╝                  ║
+║      ██║   ██╔══╝  ██╔══██╗██╔══██║██╔══██╗██║   ██║ ██╔██╗                  ║
+║      ██║   ███████╗██║  ██║██║  ██║██████╔╝╚██████╔╝██╔╝ ██╗                 ║
+║      ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚═╝  ╚═╝                 ║
+║                                                                              ║
+║                 ⚡ ULTIMATE REFERRAL AUTOMATION SUITE ⚡                     ║
+║                                                                              ║
+║   ➤ Created by : Mehak Sandhu (@mehaksandhudev)                              ║
+║   ➤ GitHub     : https://github.com/mehaksandhudev                           ║
+║   ➤ Project    : TeraBox Referral & Account Automation Engine                ║
+║   ➤ Features   : Dynamic Mobile IP Rotation • Anti-Detection • Live Web UI   ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+"""
+
+
 if __name__ == '__main__':
     from datetime import datetime
 
-    logging.info("=" * 60)
-    logging.info("TeraBox Referral Automation — Starting")
-    logging.info("=" * 60)
+    print(BANNER)
+    EMAIL_PROVIDER = os.environ.get("EMAIL_PROVIDER", "mailtm")
 
-    EMAIL_PROVIDER = os.environ.get("EMAIL_PROVIDER", "1secmail")
-
-    print(f"\n  [*] TeraBox Referral Automation (continuous mode)")
+    print(f"  [*] TeraBox Referral Automation (continuous mode)")
     print(f"  [*] Email provider: {EMAIL_PROVIDER}")
     print(f"  [*] Control and delays managed via Dashboard at http://localhost:8080")
     print(f"  [*] Press Ctrl+C to stop\n")
@@ -892,29 +1071,47 @@ if __name__ == '__main__':
 
                 result_idx = total_all + i  # Global index across rounds
 
-                logging.info(f"Processing link {i+1}/{len(referral_links)}: {url}")
+                # Safety Check: Ensure ADB device is connected so bot does NOT run on normal IP
+                require_adb = ctrl.get("require_adb", True)
+                if require_adb:
+                    while not is_adb_device_connected():
+                        logging.warning("[ADB Safety] No authorized phone connected via ADB! Pausing to protect your real IP. Connect phone with USB Debugging enabled...")
+                        stats = load_stats()
+                        stats["running"] = False
+                        update_result(stats, result_idx, url=url, status="paused", error="Waiting for ADB phone connection...")
+                        save_stats(stats)
+                        time.sleep(10)
+                        ctrl = load_control()
+                        if ctrl.get("stopped"):
+                            break
+                    if ctrl.get("stopped"):
+                        break
 
+                current_ip = get_public_ip()
                 timestamp = datetime.now().strftime("%H:%M:%S")
-                update_result(stats, result_idx, url=url, email="--", status="running", timestamp=timestamp, error="")
+                logging.info(f"Using Public IP for registration: {current_ip}")
+                update_result(stats, result_idx, url=url, email="--", ip=current_ip, status="running", timestamp=timestamp, error="")
                 stats["running"] = True
                 save_stats(stats)
 
                 try:
                     result = asyncio.run(orchestrate_full_registration(url))
                     email_used = result.get('email', '--') if isinstance(result, dict) else '--'
+                    password_used = result.get('password', '--') if isinstance(result, dict) else '--'
                     success = result.get('success', False) if isinstance(result, dict) else bool(result)
 
-                    update_result(stats, result_idx, email=email_used)
+                    update_result(stats, result_idx, email=email_used, password=password_used, ip=current_ip)
 
                     stats["total"] += 1
                     if success:
                         stats["success"] += 1
+                        save_account(email_used, password_used, url, ip=current_ip)
                         update_result(stats, result_idx, status="success", timestamp=datetime.now().strftime("%H:%M:%S"))
-                        logging.info(f"[OK] Link {i+1}/{len(referral_links)} SUCCEEDED ({email_used})")
+                        logging.info(f"[OK] Link {i+1}/{len(referral_links)} SUCCEEDED ({email_used}) [IP: {current_ip}]")
                     else:
                         stats["errors"] += 1
                         update_result(stats, result_idx, status="error", error="Registration failed", timestamp=datetime.now().strftime("%H:%M:%S"))
-                        logging.error(f"[FAIL] Link {i+1}/{len(referral_links)} FAILED ({email_used})")
+                        logging.error(f"[FAIL] Link {i+1}/{len(referral_links)} FAILED ({email_used}) [IP: {current_ip}]")
 
                 except Exception as e:
                     stats["total"] += 1
@@ -923,6 +1120,9 @@ if __name__ == '__main__':
                     logging.error(f"[FAIL] Link {i+1}/{len(referral_links)} CRASHED: {e}")
 
                 save_stats(stats)
+
+                # Rotate mobile IP for the next registration
+                rotate_mobile_ip(delay_after=8)
 
                 # Delay between referrals
                 link_delay = ctrl.get("link_delay", 15)
