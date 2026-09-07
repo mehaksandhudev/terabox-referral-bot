@@ -823,42 +823,6 @@ async def orchestrate_full_registration(terabox_referral_url):
                 logging.info(f"Current Page URL after submission: {current_url}")
                 logging.info(f"Current Page Title: {title}")
 
-                screenshot_path = os.path.join(SCRIPT_DIR, "after_password_popup.png")
-                try:
-                    await page.screenshot(path=screenshot_path, full_page=False)
-                    logging.info(f"Saved screenshot of new page to: {screenshot_path}")
-                except Exception as e:
-                    logging.warning(f"Screenshot capture failed: {e}")
-
-                artifact_dir = os.environ.get("GEMINI_ARTIFACTS_DIR", r"C:\Users\mehak\.gemini\antigravity-ide\brain\1fe139c2-570c-4ff8-beb4-74b2c2da7ff6")
-                if os.path.isdir(artifact_dir):
-                    try:
-                        artifact_screenshot = os.path.join(artifact_dir, "after_password_popup.png")
-                        await page.screenshot(path=artifact_screenshot, full_page=False)
-                        logging.info(f"Saved artifact screenshot to: {artifact_screenshot}")
-                    except Exception:
-                        pass
-
-                try:
-                    elements_info = await page.evaluate("""() => {
-                        const buttons = Array.from(document.querySelectorAll('button, a, div[role="button"], input[type="button"], input[type="submit"]'))
-                            .filter(el => el.offsetParent !== null && el.innerText.trim().length > 0)
-                            .map(el => el.innerText.trim().replace(/\\s+/g, ' ')).slice(0, 20);
-                        const headings = Array.from(document.querySelectorAll('h1, h2, h3, h4, [class*="title"], [class*="header"], [class*="modal"]'))
-                            .filter(el => el.offsetParent !== null && el.innerText.trim().length > 0)
-                            .map(el => el.innerText.trim().replace(/\\s+/g, ' ')).slice(0, 10);
-                        return { buttons, headings };
-                    }""")
-                    logging.info(f"Detected page headings/titles: {elements_info.get('headings', [])}")
-                    logging.info(f"Detected interactive buttons/actions: {elements_info.get('buttons', [])}")
-                except Exception as e:
-                    logging.warning(f"Could not inspect page elements: {e}")
-
-                is_headless = os.environ.get("HEADLESS", "false").lower() in ("true", "1", "yes")
-                if not is_headless:
-                    logging.info("Browser is running with GUI (non-headless). Pausing 10s on the new page so you can observe it...")
-                    await asyncio.sleep(10)
-
                 registration_success = True
 
             except Exception as e:

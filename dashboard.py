@@ -422,7 +422,7 @@ async function refStats(){
       const pwdDisplay = safePwd ? `<span style="font-family:'JetBrains Mono',monospace;letter-spacing:.3px">${safePwd}</span>` : '--';
       return`<tr style="${rowStyle}">
         <td style="white-space:nowrap">${r.originalIndex}</td>
-        <td class="mono" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${safeUrl}">${safeUrl||'--'}</td>
+        <td class="mono" style="white-space:nowrap;user-select:all;cursor:pointer" onclick="navigator.clipboard.writeText('${safeUrl.replace(/'/g,"\\'")}');toast('Referral URL copied!')" title="Click to copy full link">${safeUrl||'--'}</td>
         <td class="mono" style="white-space:nowrap;color:var(--accent)" title="${safeEmail}">${safeEmail||'--'}</td>
         <td class="mono" style="white-space:nowrap;color:var(--text);user-select:all;cursor:pointer" onclick="navigator.clipboard.writeText('${safePwd.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}');toast('Password copied!')" title="Click to copy">${pwdDisplay}</td>
         <td class="mono" style="white-space:nowrap;color:var(--muted)">${safeIp||'--'}</td>
