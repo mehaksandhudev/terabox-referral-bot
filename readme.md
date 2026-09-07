@@ -40,7 +40,11 @@ A fully automated TeraBox referral registration bot with a **real-time web dashb
 - **Auto Credential Storage (`accounts.txt`)** — Automatically saves every created account with its email, password, public IP address, timestamp, and referral URL.
 - **Post-Registration Screen Inspection** — Automatically captures a high-resolution screenshot (`after_password_popup.png`) and logs page titles, headings, and interactive buttons upon login.
 - **Dynamic Mobile IP Rotation via Android ADB** — Automatically toggles phone Airplane Mode between registrations to obtain a fresh cellular IP from your mobile carrier (Jio, Airtel, etc.) in ~8 seconds.
+- **Self-Healing Network Stabilization & Retries** — Actively polls and verifies internet reachability after IP rotation and retries page navigation up to 3 times to prevent transient `ERR_CONNECTION_REFUSED` while USB tethering reconnects.
+- **ADB Safety Lock** — Pauses automation immediately if the USB-tethered Android phone is unplugged or unreachable, ensuring the bot NEVER runs on your real home IP.
+- **Direct `.txt` Referral Upload** — Upload `.txt` files containing referral URLs directly from the dashboard; built-in regex automatically parses and extracts every single valid link.
 - **Real-Time Web Dashboard** — Dark-mode UI (Port 8080) displaying total processed, success/error metrics, live rate, delay sliders, and a full results table with Email, Password, and IP.
+- **One-Click Clear Actions** — Purge old test results or clear live console logs directly from the dashboard header buttons.
 - **Direct Accounts Download** — Download or view `accounts.txt` directly from the dashboard UI with one click.
 - **Silent Background Boot Mode (`HEADLESS=true`)** — Automatically starts on Windows boot with zero intrusive browser windows popping up; monitor everything via the web dashboard.
 - **Multi-Link Continuous Loop** — Cycles through multiple referral URLs in `referral_links.txt` with configurable delay intervals and kill switch.
@@ -58,10 +62,10 @@ Access the live dashboard at **`http://localhost:8080`**:
 | **Control Bar** | Resume, Pause, and Stop (Kill Switch) buttons, plus live delay inputs |
 | **Stats Cards** | Total processed, successful, errors, and real-time success rate |
 | **Progress Bar** | Visual indicator of current processing round |
-| **Referral Links** | Interactive panel to add/remove target referral links on the fly |
-| **Results Table** | Columns for `#`, `URL`, `Email`, `Password`, `IP`, `Status`, and `Timestamp` |
+| **Referral Links** | Interactive panel with live counter, URL input, and **"Upload .txt"** button |
+| **Results Table** | Columns for `#`, `URL`, `Email`, `Password`, `IP`, `Status`, `Timestamp`, and **"Clear"** button |
 | **Accounts Download** | Quick-action button to download `accounts.txt` directly from the browser |
-| **Live Logs** | Real-time terminal streaming automation events as they occur |
+| **Live Logs** | Bounded monospaced log stream with syntax-highlighted levels and **"Clear"** button |
 
 ---
 
@@ -257,12 +261,15 @@ Settings can be managed via environment variables or directly inside `control.js
 |---|---|---|
 | `GET` | `/` | Web dashboard interface |
 | `GET` | `/api/stats` | Current stats JSON (`total`, `success`, `errors`, `results`) |
+| `DELETE` | `/api/stats` | Clear past results from dashboard and stats.json |
 | `GET` | `/api/accounts` | Download or view `accounts.txt` directly |
 | `POST` | `/api/control` | Send Pause / Resume / Stop commands & update delays |
 | `GET` | `/api/links` | List all configured referral links |
-| `POST` | `/api/links` | Add a new referral link `{"url": "..."}` |
+| `POST` | `/api/links` | Add a single referral link `{"url": "..."}` |
+| `POST` | `/api/links/bulk` | Bulk import referral links from text `{"links": ["..."]}` |
 | `DELETE` | `/api/links` | Clear or remove referral links |
 | `GET` | `/api/logs` | Real-time console log stream |
+| `DELETE` | `/api/logs` | Clear in-memory console logs |
 
 ---
 
@@ -270,6 +277,7 @@ Settings can be managed via environment variables or directly inside `control.js
 
 | Issue | Cause | Solution |
 |---|---|---|
+| `net::ERR_CONNECTION_REFUSED` | Mobile IP just toggled & USB tethering route was reconnecting | Handled automatically! The bot polls for network stabilization and retries navigation up to 3 times. Ensure phone data is active. |
 | `net::ERR_CONNECTION_TIMED_OUT` | Indian ISP block (Jio / Airtel) | Connect Proton VPN or Cloudflare WARP before running. |
 | `Found 2 password input fields` | Normal behavior | TeraBox now requires Password + Confirm Password. The bot fills both automatically. |
 | `No module named 'nest_asyncio'` | Virtual environment not active | Run `.\venv\Scripts\activate` before launching scripts. |

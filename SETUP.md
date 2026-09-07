@@ -53,14 +53,14 @@ playwright install chromium
 
 ## 🔗 Step 3: Configure Referral Links
 
-Open [`referral_links.txt`](referral_links.txt) and paste your TeraBox referral links (one URL per line):
+You have two convenient ways to add referral links:
+- **Direct Web Upload (Easiest)**: Open the dashboard at `http://localhost:8080`, click the **"Upload .txt"** button, and select any text file. The bot will automatically extract and import every valid referral link inside.
+- **Manual File**: Open [`referral_links.txt`](referral_links.txt) and paste your TeraBox referral links (one URL per line):
 
 ```text
 https://1024terabox.com/s/YOUR_REFERRAL_CODE_1
 https://1024terabox.com/s/YOUR_REFERRAL_CODE_2
 ```
-
-*(You can also add or delete links dynamically from the Web Dashboard later).*
 
 ---
 
@@ -75,6 +75,9 @@ To get a **fresh, clean mobile IP for every single registration** using an Andro
    - Turn **ON USB Tethering** (*Settings -> Network / Hotspot -> USB Tethering*).
    - Turn **ON USB Debugging** (*Settings -> Developer Options -> USB Debugging*).
 3. Unlock your phone screen. When prompted with *"Allow USB Debugging?"*, check **"Always allow from this computer"** and tap **OK**.
+
+> 🛡️ **ADB Safety Lock**: The bot continuously verifies phone connection. If your phone is unplugged or ADB is lost, the bot **immediately pauses** and waits—protecting your real IP from ever being leaked or used for registrations.
+> 🔄 **Self-Healing Connection**: After every IP rotation, the bot actively tests internet reachability and automatically retries navigation (up to 3 attempts) while Windows USB tethering re-negotiates routes.
 
 ---
 

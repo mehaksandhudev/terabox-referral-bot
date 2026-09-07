@@ -424,16 +424,28 @@ async def orchestrate_full_registration(terabox_referral_url):
 
             logging.info(f"Attempting to register on TeraBox with email: {temp_email_address}")
 
-            logging.info(f"Navigating to referral URL: {terabox_referral_url}")
             try:
                 page.set_default_timeout(45000)
                 page.set_default_navigation_timeout(60000)
-                await page.goto(terabox_referral_url, timeout=60000, wait_until="domcontentloaded")
-                try:
-                    await page.wait_for_load_state('networkidle', timeout=15000)
-                except Exception:
-                    logging.info("Network idle timed out, proceeding with DOM content loaded state.")
-                logging.info(f"Successfully navigated to {terabox_referral_url}")
+
+                # Retry navigation up to 3 times to allow network to settle if recently rotated IP
+                max_nav_retries = 3
+                for nav_attempt in range(1, max_nav_retries + 1):
+                    try:
+                        logging.info(f"Navigating to referral URL (attempt {nav_attempt}/{max_nav_retries}): {terabox_referral_url}")
+                        await page.goto(terabox_referral_url, timeout=60000, wait_until="domcontentloaded")
+                        try:
+                            await page.wait_for_load_state('networkidle', timeout=15000)
+                        except Exception:
+                            logging.info("Network idle timed out, proceeding with DOM content loaded state.")
+                        logging.info(f"Successfully navigated to {terabox_referral_url}")
+                        break
+                    except Exception as nav_err:
+                        if nav_attempt < max_nav_retries:
+                            logging.warning(f"Navigation attempt {nav_attempt} hit transient network error ({nav_err}). Waiting 4s for network/route to stabilize...")
+                            await asyncio.sleep(4)
+                        else:
+                            raise nav_err
 
                 # --- SELECTORS (inspected from live 1024terabox.com site) ---
                 # TeraBox uses a React SPA with minimal CSS classes.
@@ -866,11 +878,23 @@ ADB_PATH = r"C:\Users\mehak\AppData\Local\Android\Sdk\platform-tools\adb.exe"
 
 
 def get_public_ip():
-    """Fetches the current public IP address."""
-    try:
-        return requests.get("https://api.ipify.org?format=json", timeout=6).json().get("ip", "unknown")
-    except Exception:
-        return "unknown"
+    """Fetches the current public IP address with fallback endpoints."""
+    endpoints = [
+        "https://api.ipify.org?format=json",
+        "https://ipinfo.io/json",
+        "https://ifconfig.me/all.json"
+    ]
+    for ep in endpoints:
+        try:
+            r = requests.get(ep, timeout=5)
+            if r.status_code == 200:
+                data = r.json()
+                ip = data.get("ip") or data.get("ip_addr")
+                if ip:
+                    return ip.strip()
+        except Exception:
+            pass
+    return "unknown"
 
 
 def is_adb_device_connected():
@@ -886,7 +910,7 @@ def is_adb_device_connected():
 
 
 def rotate_mobile_ip(delay_after=8):
-    """Toggles phone airplane mode via ADB to obtain a fresh dynamic mobile IP."""
+    """Toggles phone airplane mode via ADB to obtain a fresh dynamic mobile IP and waits for internet stabilization."""
     if not os.path.exists(ADB_PATH):
         return None
     try:
@@ -896,8 +920,19 @@ def rotate_mobile_ip(delay_after=8):
         subprocess.run([ADB_PATH, "shell", "cmd", "connectivity", "airplane-mode", "disable"], check=True, capture_output=True)
         logging.info(f"[IP Rotation] Waiting {delay_after}s for cellular reconnection...")
         time.sleep(delay_after)
-        new_ip = get_public_ip()
-        logging.info(f"[IP Rotation] Reconnected! New Public IP: {new_ip}")
+        
+        # Verify active internet connectivity before proceeding
+        new_ip = None
+        for attempt in range(8):
+            new_ip = get_public_ip()
+            if new_ip and new_ip != "unknown":
+                break
+            logging.info("[IP Rotation] Waiting for USB tethering/internet connection to restore...")
+            time.sleep(2)
+            
+        # Allow Windows network adapter/routes to fully settle
+        time.sleep(3)
+        logging.info(f"[IP Rotation] Internet stabilized! New Public IP: {new_ip or 'unknown'}")
         return new_ip
     except Exception as e:
         logging.warning(f"[IP Rotation] Could not toggle airplane mode: {e}")
