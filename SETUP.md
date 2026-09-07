@@ -196,12 +196,8 @@ Remotely monitor and control the bot from your phone via Telegram:
 |---|---|
 | [`terabox_automator.py`](terabox_automator.py) | Main automation engine (Playwright, email verification, two-field password input, mobile IP rotation) |
 | [`dashboard.py`](dashboard.py) | Local web dashboard HTTP server (port 8080), REST APIs, and Telegram bot |
-| [`test_single_run.py`](test_single_run.py) | Standalone single-link test script with visible browser GUI |
-| [`start_automator.bat`](start_automator.bat) | Windows launcher with auto-restart loop and headless configuration |
-| [`add_to_startup.bat`](add_to_startup.bat) | Windows boot shortcut creator |
-| [`accounts.txt`](accounts.txt) | Saved credentials (`email:password | IP | Timestamp | Ref URL`) |
-| [`after_password_popup.png`](after_password_popup.png) | High-resolution screenshot captured immediately after registration |
 | [`referral_links.txt`](referral_links.txt) | Configured referral links to cycle through |
+| [`accounts.txt`](accounts.txt) | Saved credentials (`email:password | IP | Timestamp | Ref URL`) |
 | [`stats.json`](stats.json) | Metrics and historical results displayed on the dashboard |
 | [`control.json`](control.json) | Real-time control flags (`paused`, `stopped`, delays, Telegram config) |
 | [`logs.json`](logs.json) | In-memory log stream for the web dashboard terminal |

@@ -38,7 +38,6 @@ A fully automated TeraBox referral registration bot with a **real-time web dashb
 - **Fully Automated Registration** — Navigates TeraBox referral landing pages, extracts verification codes from email subjects, and automates account creation end-to-end.
 - **Two-Field Password & Confirmation Support** — Handles the updated TeraBox registration flow with both "Enter password" and "Confirm password" fields, followed by automated Enter/Submit.
 - **Auto Credential Storage (`accounts.txt`)** — Automatically saves every created account with its email, password, public IP address, timestamp, and referral URL.
-- **Post-Registration Screen Inspection** — Automatically captures a high-resolution screenshot (`after_password_popup.png`) and logs page titles, headings, and interactive buttons upon login.
 - **Dynamic Mobile IP Rotation via Android ADB** — Automatically toggles phone Airplane Mode between registrations to obtain a fresh cellular IP from your mobile carrier (Jio, Airtel, etc.) in ~8 seconds.
 - **Self-Healing Network Stabilization & Retries** — Actively polls and verifies internet reachability after IP rotation and retries page navigation up to 3 times to prevent transient `ERR_CONNECTION_REFUSED` while USB tethering reconnects.
 - **ADB Safety Lock** — Pauses automation immediately if the USB-tethered Android phone is unplugged or unreachable, ensuring the bot NEVER runs on your real home IP.
