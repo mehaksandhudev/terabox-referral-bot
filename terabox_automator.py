@@ -80,6 +80,17 @@ logging.getLogger().addHandler(JsonLogHandler())
 
 
 
+def generate_clean_password():
+    """Generates a clean password satisfying TeraBox requirements without HTML-breaking characters."""
+    safe_symbols = "@#$*!?&"
+    letters = ''.join(secrets.choice(string.ascii_letters) for _ in range(7))
+    digits = ''.join(secrets.choice(string.digits) for _ in range(3))
+    symbol = secrets.choice(safe_symbols)
+    pwd_list = list(letters + digits + symbol)
+    secrets.SystemRandom().shuffle(pwd_list)
+    return ''.join(pwd_list)
+
+
 # --- MailTmHandler class ---
 class MailTmHandler:
     BASE_URL = "https://api.mail.tm"
@@ -131,7 +142,7 @@ class MailTmHandler:
 
         username_prefix = ''.join(secrets.choice(string.ascii_lowercase) for i in range(10))
         email_address = f"{username_prefix}@{domain}"
-        password = ''.join(secrets.choice(string.ascii_letters + string.digits + string.punctuation) for i in range(12))
+        password = generate_clean_password()
 
         endpoint = f"{self.BASE_URL}/accounts"
         headers = {"Content-Type": "application/json"}
@@ -254,8 +265,8 @@ class OneSecMailHandler:
                 email = emails[0]
                 self.login_name, self.domain = email.split('@')
                 logging.info(f"1secmail account created: {email}")
-                # Generate a random password for TeraBox registration
-                password = ''.join(secrets.choice(string.ascii_letters + string.digits + string.punctuation) for _ in range(12))
+                # Generate a clean random password for TeraBox registration
+                password = generate_clean_password()
                 return {
                     'address': email,
                     'password': password,

@@ -101,13 +101,13 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .tw{max-height:360px;overflow-y:auto;overflow-x:auto}
 .tw::-webkit-scrollbar{width:4px;height:4px}
 .tw::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
-table{width:100%;border-collapse:collapse}
-th{position:sticky;top:0;z-index:10;background:#18181b;text-align:left;padding:9px 18px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border-s)}
-td{padding:9px 18px;font-size:13px;border-bottom:1px solid var(--border-s);color:var(--text2)}
+table{width:100%;border-collapse:collapse;white-space:nowrap}
+th{position:sticky;top:0;z-index:10;background:#18181b;text-align:left;padding:9px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border-s);white-space:nowrap}
+td{padding:9px 14px;font-size:12.5px;border-bottom:1px solid var(--border-s);color:var(--text2);white-space:nowrap;vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:rgba(255,255,255,.02)}
-.mono{font-family:'JetBrains Mono',monospace;font-size:12px}
-.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.mono{font-family:'JetBrains Mono',monospace;font-size:12px;white-space:nowrap}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;white-space:nowrap}
 .t-ok{background:rgba(34,197,94,.1);color:var(--green)}
 .t-err{background:rgba(239,68,68,.1);color:var(--red)}
 .t-run{background:rgba(234,179,8,.1);color:var(--amber)}
@@ -244,8 +244,8 @@ tr:hover td{background:rgba(255,255,255,.02)}
 </div>
 <div class="toast" id="toast"></div>
 
-<script>
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.className='toast show';setTimeout(()=>t.classList.remove('show'),2500)}
+function escHtml(s){if(s==null||s===undefined)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 
 // Control
 async function ctrlAction(action){
@@ -415,14 +415,19 @@ async function refStats(){
       const c=r.status==='success'?'t-ok':(isRun?'t-run':'t-err');
       const t=r.status==='success'?'OK':(isRun?'Running':'Error');
       const rowStyle = isRun ? 'background:rgba(234,179,8,.12);border-left:3px solid var(--amber)' : '';
+      const safePwd = escHtml(r.password);
+      const safeEmail = escHtml(r.email);
+      const safeUrl = escHtml(r.url);
+      const safeIp = escHtml(r.ip);
+      const pwdDisplay = safePwd ? `<span style="font-family:'JetBrains Mono',monospace;letter-spacing:.3px">${safePwd}</span>` : '--';
       return`<tr style="${rowStyle}">
-        <td>${r.originalIndex}</td>
-        <td class="mono" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.url||''}">${r.url||'--'}</td>
-        <td class="mono" style="color:var(--accent)">${r.email||'--'}</td>
-        <td class="mono" style="color:var(--text);user-select:all" title="Click to copy">${r.password||'--'}</td>
-        <td class="mono" style="color:var(--muted)">${r.ip||'--'}</td>
-        <td><span class="tag ${c}">${t}</span></td>
-        <td class="mono">${r.timestamp||'--'}</td>
+        <td style="white-space:nowrap">${r.originalIndex}</td>
+        <td class="mono" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${safeUrl}">${safeUrl||'--'}</td>
+        <td class="mono" style="white-space:nowrap;color:var(--accent)" title="${safeEmail}">${safeEmail||'--'}</td>
+        <td class="mono" style="white-space:nowrap;color:var(--text);user-select:all;cursor:pointer" onclick="navigator.clipboard.writeText('${safePwd.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}');toast('Password copied!')" title="Click to copy">${pwdDisplay}</td>
+        <td class="mono" style="white-space:nowrap;color:var(--muted)">${safeIp||'--'}</td>
+        <td style="white-space:nowrap"><span class="tag ${c}">${t}</span></td>
+        <td class="mono" style="white-space:nowrap">${r.timestamp||'--'}</td>
       </tr>`;
     }).join('');
   }catch{}
