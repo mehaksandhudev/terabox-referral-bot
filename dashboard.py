@@ -7,9 +7,17 @@ import http.server
 import socketserver
 import json
 import os
+import sys
 import threading
 import requests
 import time
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
 
 PORT = int(os.environ.get("PORT", 8080))
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -795,7 +803,7 @@ if __name__ == '__main__':
     t = threading.Thread(target=telegram_bot_loop, daemon=True)
     t.start()
         
-    with socketserver.TCPServer(("", PORT), Handler) as h:
+    with http.server.ThreadingHTTPServer(("", PORT), Handler) as h:
         print(f"  [*] TeraBox Web Dashboard running at: http://localhost:{PORT}\n")
         try: h.serve_forever()
         except KeyboardInterrupt: print("\n  Stopped.")

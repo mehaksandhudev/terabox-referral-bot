@@ -8,11 +8,19 @@ import asyncio
 import nest_asyncio
 from playwright.async_api import async_playwright
 import os
+import sys
 import re # For regex to extract verification code
 import base64
 from datetime import datetime
 import threading
 import subprocess
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
 
 # Optional: Gemini Vision for smart element finding
 try:
