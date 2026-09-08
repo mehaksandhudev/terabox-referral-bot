@@ -9,6 +9,7 @@ import json
 import os
 import sys
 import threading
+import subprocess
 import requests
 import time
 
@@ -26,6 +27,18 @@ LINKS_FILE = os.path.join(SCRIPT_DIR, "referral_links.txt")
 LOGS_FILE = os.path.join(SCRIPT_DIR, "logs.json")
 CONTROL_FILE = os.path.join(SCRIPT_DIR, "control.json")
 ACCOUNTS_FILE = os.path.join(SCRIPT_DIR, "accounts.txt")
+
+ADB_PATH = r"C:\Users\mehak\AppData\Local\Android\Sdk\platform-tools\adb.exe"
+
+def is_adb_connected():
+    if not os.path.exists(ADB_PATH):
+        return False
+    try:
+        res = subprocess.run([ADB_PATH, "devices"], capture_output=True, text=True, timeout=3)
+        lines = res.stdout.strip().split("\n")[1:]
+        return any(len(p.strip().split()) >= 2 and p.strip().split()[1] == "device" for p in lines)
+    except Exception:
+        return False
 
 DEFAULT_CONTROL = {"paused": False, "stopped": False, "round_delay": 30, "link_delay": 15, "telegram_token": "", "telegram_chat_id": ""}
 
@@ -158,6 +171,11 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <span class="ctrl-label">Round delay</span>
       <input type="number" class="ctrl-input" id="roundDelay" value="30" min="5" max="600" onchange="saveDelays()">
       <span class="ctrl-unit">sec</span>
+    </div>
+    <div class="ctrl-sep"></div>
+    <div class="ctrl-group" title="ADB Mobile IP Safety Lock status">
+      <span class="ctrl-label">Phone ADB</span>
+      <span class="tag t-ok" id="adbTag" style="font-size:11px">Checking...</span>
     </div>
   </div>
 
@@ -393,6 +411,12 @@ async function refStats(){
     const cr=await fetch('/api/control');const cd=await cr.json();
     const dot=document.getElementById('dot'),lbl=document.getElementById('stLbl');
     window.nextRoundAt = d.next_round_at || 0;
+    const adbTag = document.getElementById('adbTag');
+    if(adbTag){
+      if(cd.adb_connected===true){adbTag.className='tag t-ok';adbTag.textContent='Connected'}
+      else if(cd.adb_connected===false){adbTag.className='tag t-err';adbTag.textContent='Disconnected'}
+      else{adbTag.className='tag t-ok';adbTag.textContent='Enabled'}
+    }
     if(cd.stopped){dot.className='dot stopped';lbl.textContent='Stopped'}
     else if(cd.paused){dot.className='dot paused';lbl.textContent='Paused'}
     else if(run){dot.className='dot run';lbl.textContent='Running'}
@@ -504,7 +528,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         elif self.path.startswith('/api/logs'):
             self._json({"logs": IN_MEMORY_LOGS})
         elif self.path.startswith('/api/control'):
-            self._json(read_control())
+            ctrl = read_control()
+            ctrl["adb_connected"] = is_adb_connected()
+            self._json(ctrl)
         elif self.path == '/api/accounts':
             if os.path.exists(ACCOUNTS_FILE):
                 with open(ACCOUNTS_FILE, 'r', encoding='utf-8') as f:

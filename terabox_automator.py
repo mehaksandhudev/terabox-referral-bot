@@ -1016,6 +1016,22 @@ if __name__ == '__main__':
     round_num = 0
 
     try:
+        # Initial ADB Safety Check on startup
+        ctrl = load_control()
+        if ctrl.get("require_adb", True):
+            if not is_adb_device_connected():
+                print("  [!] ADB Safety Lock: No authorized Android device detected.")
+                print("  [!] Pausing on startup to protect your real home IP...")
+                print("  [!] Please connect phone via USB with USB Debugging enabled.\n")
+                while not is_adb_device_connected():
+                    logging.warning("[ADB Safety] Waiting for phone connection via ADB before starting automation...")
+                    time.sleep(5)
+                    ctrl = load_control()
+                    if ctrl.get("stopped"):
+                        break
+                if not ctrl.get("stopped"):
+                    print("  [+] Phone detected via ADB! Starting automation safely.\n")
+
         while True:
             # Check control file at start of round
             ctrl = load_control()
