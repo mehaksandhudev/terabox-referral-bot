@@ -305,3 +305,12 @@ Settings can be managed via environment variables or directly inside `control.js
 ## 📄 License
 
 Licensed under the [MIT License](LICENSE).
+
+---
+
+<div align="center">
+
+Crafted with ❤️ by **[Mehak Sandhu](https://github.com/mehaksandhudev)** • [Portfolio](https://www.mehak-sandhu.in)
+
+</div>
+
