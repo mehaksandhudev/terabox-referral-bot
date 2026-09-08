@@ -288,7 +288,9 @@ Settings can be managed via environment variables or directly inside `control.js
 ## ☕ Support & Contributing
 
 - **Pull Requests**: Contributions and bug fixes are welcome! Feel free to open an issue or PR.
-- **Support**: If this project helped you, consider supporting via [Buy Me A Coffee](https://buymeacoffee.com/mehaksandhudev).
+- **Support**: If this project helped you, consider supporting via [PayPal](https://paypal.me/mhksandhu) or [Buy Me A Coffee](https://buymeacoffee.com/mehaksandhudev).
+
+[![Donate with PayPal](https://img.shields.io/badge/Donate-PayPal-00457C?style=flat-square&logo=paypal&logoColor=white)](https://paypal.me/mhksandhu) [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-☕-FFDD00?style=flat-square&logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/mehaksandhudev)
 
 ---
 
