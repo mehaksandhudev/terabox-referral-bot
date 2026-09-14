@@ -1018,7 +1018,7 @@ if __name__ == '__main__':
     try:
         # Initial ADB Safety Check on startup
         ctrl = load_control()
-        if ctrl.get("require_adb", True):
+        if ctrl.get("require_adb", False):
             if not is_adb_device_connected():
                 print("  [!] ADB Safety Lock: No authorized Android device detected.")
                 print("  [!] Pausing on startup to protect your real home IP...")
@@ -1106,7 +1106,7 @@ if __name__ == '__main__':
                 result_idx = total_all + i  # Global index across rounds
 
                 # Safety Check: Ensure ADB device is connected so bot does NOT run on normal IP
-                require_adb = ctrl.get("require_adb", True)
+                require_adb = ctrl.get("require_adb", False)
                 if require_adb:
                     while not is_adb_device_connected():
                         logging.warning("[ADB Safety] No authorized phone connected via ADB! Pausing to protect your real IP. Connect phone with USB Debugging enabled...")
@@ -1155,8 +1155,11 @@ if __name__ == '__main__':
 
                 save_stats(stats)
 
-                # Rotate mobile IP for the next registration
-                rotate_mobile_ip(delay_after=8)
+                # Rotate mobile IP for the next registration (only when ADB phone is used)
+                if ctrl.get("require_adb", False) and is_adb_device_connected():
+                    rotate_mobile_ip(delay_after=8)
+                else:
+                    logging.info("[Cloud Mode] Skipping IP rotation (no ADB). Using server IP.")
 
                 # Delay between referrals
                 link_delay = ctrl.get("link_delay", 15)
